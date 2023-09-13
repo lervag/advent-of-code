@@ -1,18 +1,590 @@
 import scala.util.{Using, Success, Failure}
-import scala.collection.mutable.{Stack, Map => MutableMap, ListBuffer}
+import scala.collection.mutable.{ArrayBuffer, Stack, Map => MutableMap, ListBuffer}
 import scala.io.Source
 
-@main def main: Unit = day08
+import ujson._
 
-private def day08: Unit = {
-  val source = Source.fromFile("resources/input-day-08a")
+@main def day16: Unit = {
+  case class Node(name: String, rate: Int, edges: List[String]) {
+    var is_open = false
+  }
+
+  val graph = Source.fromFile("resources/input-day-16a")
+    .getLines.toList.map(_ match {
+      case s"Valve $n has flow rate=$r; tunnels lead to valves $v"
+        => Node(n, r.toInt, v.split(", ").toList)
+      case s"Valve $n has flow rate=$r; tunnel leads to valve $v"
+        => Node(n, r.toInt, List(v))
+      case _
+        => Node("", 0, List(""))
+    })
+  val mapNameToNode = graph.map( n => n.name -> n ).toMap
+
+  // val graphShortestPath = Map[(Node, Node), Int]()
+
+  // def getValue(remaining_time: Int, source: Node, target: Node) = {
+  //   if (target.is_open || target.rate == 0)
+  //     0
+  //   else {
+  //     (remaining_time - graphShortestPath(source, target) - 1)*target.rate
+  //   }
+  // }
+
+  val time = 30
+  val origin = "AA"
+  var current = mapNameToNode(origin)
+}
+private def day15: Unit = {
+  case class Beacon(x: Int, y: Int)
+
+  case class Sensor(x: Int, y: Int, range: Int, closest_beacon: Beacon) {
+    def coverage(row: Int): Range = {
+      val r = range - math.abs(y - row)
+      x - r to x + r
+    }
+  }
+
+  def parseSensor(sx: Int, sy: Int, bx: Int, by: Int)
+    = Sensor(sx, sy, math.abs(sx - bx) + math.abs(sy - by), Beacon(bx, by))
+
+  def coverage(sensors: List[Sensor], row: Int) = sensors
+    .filter { s => math.abs(s.y - row) < s.range }
+    .map { s => s.coverage(row) }
+    // .foldLeft(Vector[Int]()) { (a, b) => a.union(b) }
+
+  def search(sensors: List[Sensor], maxRow: Int) = {
+    var x: Long = -1
+    var y: Long = -1
+    while (y <= maxRow && x < 0) {
+      y += 1
+      if (y % 1000 == 0) {
+        println(f"Searching row $y%7d of ${maxRow}")
+      }
+
+      val covered = Array.fill(maxRow + 1)(false)
+      coverage(sensors, y.toInt) foreach { r =>
+        java.util.Arrays.fill(
+          covered,
+          math.max(0, r.start),
+          math.min(maxRow, r.end) + 1,
+          true
+        )
+      }
+
+      x = covered.indexOf(false)
+    }
+
+    if (x > 0) {
+      println(s"Found ($x, $y)!")
+      println(s"Answer is: ${4000000*x + y}")
+    }
+  }
+
+  val row = 10
+  val searchSpace = 20
+  val source = Source.fromFile("resources/input-day-15a")
+  // val row = 2000000
+  // val searchSpace = 4000000
+  // val source = Source.fromFile("resources/input-day-15")
+  val sensors = source.getLines.toList.map(_ match {
+    case s"Sensor at x=$sx, y=$sy: closest beacon is at x=$bx, y=$by"
+      => parseSensor(sx.toInt, sy.toInt, bx.toInt, by.toInt)
+    case _
+      => parseSensor(0, 0, 0, 0)
+  })
+  source.close
+
+  search(sensors, searchSpace)
+}
+
+private def day14: Unit = {
+  val stoneMap = MutableMap[(Int, Int), Char]()
+  val origin = (500, 0)
+  stoneMap(origin) = '+'
+
+  def draw(stoneMap: MutableMap[(Int, Int), Char]): Unit = {
+    val xs = stoneMap.keys.map(_._1)
+    val ys = stoneMap.keys.map(_._2)
+    val xrange = xs.min to xs.max
+    val yrange = ys.min to ys.max
+    yrange foreach { y =>
+      xrange foreach { x =>
+        print(stoneMap.getOrElse((x, y), ' '))
+      }
+      print("\n")
+    }
+  }
+
+  def pourSand(m: MutableMap[(Int, Int), Char], floor: Boolean): Boolean = {
+    var (x, y) = origin
+    if (m(origin) == 'o') {
+      false
+    } else {
+      val ymax = m.filter(_._2 == '#').keys.map(_._2).max + 2
+      var flowing = true
+      while (flowing && y < ymax) {
+        y += 1
+        if (!m.contains((x, y))) {
+          // pass
+        } else if (!m.contains((x - 1, y))) {
+          x -= 1
+        } else if (!m.contains((x + 1, y))) {
+          x += 1
+        } else {
+          flowing = false
+          m((x, y - 1)) = 'o'
+        }
+      }
+
+      if (floor && y == ymax) {
+        flowing = false
+        m((x, y - 1)) = 'o'
+      }
+
+      !flowing
+    }
+  }
+
+  val source = Source.fromFile("resources/input-day-14a")
+  source.getLines foreach { line =>
+    line
+      .split(" -> ")
+      .map { points =>
+        val coords = points.split(',').map(_.toInt)
+        (coords(0), coords(1))
+      }
+      .reduce { (c1, c2) =>
+        val x = c1._1
+        val y = c1._2
+        if (c2._1 == x) {
+          (if (c1._2 < c2._2)
+            (c1._2 to c2._2)
+          else
+            (c2._2 to c1._2)) foreach { z => stoneMap((x, z)) = '#'}
+        } else {
+          (if (c1._1 < c2._1)
+            (c1._1 to c2._1)
+          else
+            (c2._1 to c1._1)) foreach { z => stoneMap((z, y)) = '#'}
+        }
+        c2
+      }
+  }
+  source.close
+
+  // draw(stoneMap)
+  while (pourSand(stoneMap, true)) { }
+  // draw(stoneMap)
+
+  println(stoneMap.values.count(_ == 'o'))
+}
+
+private def day13: Unit = {
+  def compare(x: ArrayBuffer[Value], y: ArrayBuffer[Value]): String = {
+    if (x.isEmpty && y.isEmpty)
+      "continue"
+    else if (x.isEmpty)
+      "right"
+    else if (y.isEmpty)
+      "wrong"
+    else
+      val state = (x.remove(0), y.remove(0)) match {
+        case (a1: Arr, b1: Arr) => compare(a1.arr.clone, b1.arr.clone)
+        case (a1: Num, b1: Num) =>
+          if (a1.num < b1.num)
+            "right"
+          else if (a1.num > b1.num)
+            "wrong"
+          else
+            "continue"
+        case (a1: Num, b1: Arr) => compare(Arr(a1).arr, b1.arr.clone)
+        case (a1: Arr, b1: Num) => compare(a1.arr.clone, Arr(b1).arr)
+        case _ => "continue"
+      }
+
+      if (state == "continue")
+        compare(x, y)
+      else
+        state
+  }
+
+  val source = Source.fromFile("resources/input-day-13")
+  val pairs = source.getLines.filter(!_.isEmpty)
+    .map(read(_))
+    .toList
+  source.close
+
+  val countRight = pairs
+    .grouped(2)
+    .map { seq => compare(seq(0).arr.clone, seq(1).arr.clone) }
+    .zipWithIndex
+    .filter { (string, index) => string == "right" }
+    .map(_._2 + 1)
+    .sum
+
+  println(countRight)
+
+  val divider1 = read("[[2]]")
+  val divider2 = read("[[6]]")
+  val pairsExtended = pairs ++ List(divider1, divider2)
+  val sortedPairs = pairsExtended.sortWith { (left, right) =>
+    compare(left.arr.clone, right.arr.clone) match {
+      case "right" => true
+      case _ => false
+    }
+  }
+
+  println((sortedPairs.indexOf(divider1) + 1) * (sortedPairs.indexOf(divider2) + 1))
+}
+
+private def day12: Unit = {
+  type Index = (Int, Int)
+
+  extension (array: Array[Array[Int]])
+    def getIndices(x: Int): Array[Index] = for (
+        (row, i) <- array.zipWithIndex;
+        (cell, j) <- row.zipWithIndex if cell == x
+      ) yield (i, j)
+
+    def get(ind: Index): Int = array(ind._1)(ind._2)
+
+    def search(ind: Index): List[Index] = {
+      val directions = List[Index](
+        (ind._1 - 1, ind._2),
+        (ind._1 + 1, ind._2),
+        (ind._1, ind._2 + 1),
+        (ind._1, ind._2 - 1)
+      )
+      val value = array.get(ind)
+      val list = for (
+        (i, j) <- directions
+                    if   i >= 0 && i < array.size
+                      && j >= 0 && j < array(0).size
+                      && array(i)(j) <= value + 1
+      ) yield (i, j)
+      list
+    }
+
+  def fewestSteps(start: Index, end: Index, map: Array[Array[Int]]): Int = {
+    val visited = MutableMap[Index, (Index, Int)]()
+    val candidates = Stack[(Index, Int)]((start, -1))
+    var previous = (-1, -1)
+
+    while (candidates.nonEmpty && !visited.contains(end)) {
+      val (current, score) = candidates.pop
+      visited += (current -> (previous, score + 1))
+      candidates.addAll(
+        map.search(current).filter { c =>
+          !visited.contains(c) && !candidates.map(_._1).contains(c)
+        }
+          .map((_, score + 1)))
+      previous = current
+    }
+
+    if (visited.contains(end))
+      visited(end)._2
+    else
+      100000
+  }
+
+  val source = Source.fromFile("resources/input-day-12")
+  val mapRaw = source.getLines.toArray.map(_.toCharArray.map(_.toInt - 96))
+  source.close
+
+  val startInitial = mapRaw.getIndices(-13)(0)
+  val end = mapRaw.getIndices(-27)(0)
+
+  val map = mapRaw.map(_.map { value =>
+    value match {
+      case -13 => 1
+      case -27 => 26
+      case x => x
+    }
+  })
+
+  println(fewestSteps(startInitial, end, map))
+
+  map.getIndices(1).map { ind =>
+    val steps = fewestSteps(ind, end, map)
+    if (steps < 100000) println(s"$ind $steps")
+    steps
+  }
+
+  println(map.getIndices(1).map { ind => fewestSteps(ind, end, map) }.min)
+}
+
+private def day11: Unit = {
+  class Monkey(
+    id: Int,
+    val items: Stack[Long],
+    inspector: (Long) => Long,
+    val divisor: Long,
+    monkey_true: Int,
+    monkey_false: Int) {
+    var inspected: Long = 0
+
+    def inspectItem: Long = {
+      inspected += 1
+      inspector(items.pop) % 9699690 // 96577
+    }
+
+    def targetMonkey(worryLevel: Long): Int =
+      if (worryLevel % divisor == 0)
+        monkey_true
+      else
+        monkey_false
+
+    override def toString = f"$id : $inspected%8d $items"
+  }
+
+  def textToMonkey(text: Seq[String]): Monkey = {
+    var items = Stack[Long]()
+    var inspector = (old: Long) => old
+    var id = 0
+    var divisor: Long = 0
+    var monkey_true = 0
+    var monkey_false = 0
+
+    text map (_ match {
+        case s"Monkey $d:" => id = d.toInt
+        case s"  Starting items: $d" => items = Stack.from(d.split(", ").map(_.toLong))
+        case  "  Operation: new = old * old" => inspector = (old: Long) => old * old
+        case s"  Operation: new = old * $d" => inspector = (old: Long) => old * d.toLong
+        case s"  Operation: new = old + $d" => inspector = (old: Long) => old + d.toLong
+        case s"  Test: divisible by $d" => divisor = d.toLong
+        case s"    If true: throw to monkey $d" => monkey_true = d.toInt
+        case s"    If false: throw to monkey $d" => monkey_false = d.toInt
+        case _ => None
+      }
+    )
+
+    new Monkey(id, items, inspector, divisor, monkey_true, monkey_false)
+  }
+
+  val source = Source.fromFile("resources/input-day-11")
+  val monkeys = source.getLines.grouped(7).toList.map(textToMonkey)
+  source.close
+
+  (1 to 10000) foreach { round =>
+    for (i <- 0 to monkeys.length - 1) {
+      while (!monkeys(i).items.isEmpty) {
+        val worryLevel = monkeys(i).inspectItem
+        val target = monkeys(i).targetMonkey(worryLevel)
+        monkeys(target).items.addOne(worryLevel)
+      }
+    }
+  }
+
+  monkeys foreach println
+
+  monkeys.map(_.inspected).sorted.takeRight(2) foreach println
+  val monkeyBusiness = monkeys.map(_.inspected).sorted.takeRight(2).reduce(_ * _)
+  println(s"Monkey business: $monkeyBusiness")
+}
+
+private def day10: Unit = {
+  val source = Source.fromFile("resources/input-day-10")
+  val instructions = source.getLines.map{ line =>
+    line.split(" ") match {
+      case Array("addx", value: String) => (2, value.toInt)
+      case Array("noop") => (1, 0)
+      case _ => (0, 0)
+    }
+  }.toArray
+  source.close
+
+  var cycle = 1
+  var sprite = 1
+  val result = for (
+    (cycles, add) <- instructions;
+    i <- (1 to cycles).reverse
+  ) yield {
+    cycle += 1
+    val pos = (cycle - 2) % 40
+    val lit = if (math.abs(sprite - pos) <= 1) '#' else '.'
+    if (i == 1) sprite += add
+    (cycle, pos, sprite, lit, cycle*sprite)
+  }
+
+  val x = result.filter { tuple => (tuple._1 + 20) % 40 == 0 }
+  x foreach println
+  println(x.map(_._5).sum)
+
+  result.map(_._4).grouped(40).map(_.mkString) foreach println
+}
+
+private def day09: Unit = {
+  def moveTail(t: (Int, Int), h: (Int, Int)): (Int, Int) = {
+    if (t._1 < h._1 - 1)
+      if (t._2 < h._2 - 1)
+        (h._1 - 1, h._2 - 1)
+      else if (t._2 > h._2 + 1)
+        (h._1 - 1, h._2 + 1)
+      else
+        (h._1 - 1, h._2)
+    else if (t._1 > h._1 + 1)
+      if (t._2 < h._2 - 1)
+        (h._1 + 1, h._2 - 1)
+      else if (t._2 > h._2 + 1)
+        (h._1 + 1, h._2 + 1)
+      else
+        (h._1 + 1, h._2)
+    else if (t._2 < h._2 - 1)
+      (h._1, h._2 - 1)
+    else if (t._2 > h._2 + 1)
+      (h._1, h._2 + 1)
+    else
+      t
+  }
+
+  val source = Source.fromFile("resources/input-day-09")
   val input = source.getLines.toArray
   source.close
 
-  val n = input.size
-  val m = input(0).length
+  val steps = input
+    .map(_.split(" ") match {
+        case Array(a, b) => (a, b.toInt)
+        case _ => ("", 0)
+      })
+    .flatMap { (a, b) => List.fill(b)(a) }
+
+  val visited = MutableMap[(Int, Int), Boolean]()
+  var posH = (0, 0)
+  var pos1 = (0, 0)
+  var pos2 = (0, 0)
+  var pos3 = (0, 0)
+  var pos4 = (0, 0)
+  var pos5 = (0, 0)
+  var pos6 = (0, 0)
+  var pos7 = (0, 0)
+  var pos8 = (0, 0)
+  var pos9 = (0, 0)
+  visited(pos9) = true
+
+  var i = 0
+  steps foreach { step =>
+    i += 1
+    posH = step match {
+      case "L" => (posH._1 - 1, posH._2)
+      case "D" => (posH._1, posH._2 - 1)
+      case "R" => (posH._1 + 1, posH._2)
+      case "U" => (posH._1, posH._2 + 1)
+      case _ => (0, 0)
+    }
+    pos1 = moveTail(pos1, posH)
+    pos2 = moveTail(pos2, pos1)
+    pos3 = moveTail(pos3, pos2)
+    pos4 = moveTail(pos4, pos3)
+    pos5 = moveTail(pos5, pos4)
+    pos6 = moveTail(pos6, pos5)
+    pos7 = moveTail(pos7, pos6)
+    pos8 = moveTail(pos8, pos7)
+    pos9 = moveTail(pos9, pos8)
+    visited(pos9) = true
+  }
+
+  println(visited.size)
+}
+
+private def day08: Unit = {
+  def pprint[A](x: Array[Array[A]]): Unit = {
+    x foreach { row => println(row.toList) }
+    println("--")
+  }
+
+  extension (array: Array[Array[Int]])
+    def combineMin(y: Array[Array[Int]]): Array[Array[Int]] = {
+      array.zip(y).map {
+        (r1, r2) => r1.zip(r2).map  {
+          (c1, c2) => math.min(c1, c2)
+        }
+      }
+    }
+
+    def isBigger(y: Array[Array[Int]]): Array[Array[Boolean]] = {
+      array.zip(y).map {
+        (r1, r2) => r1.zip(r2).map  {
+          (c1, c2) => c1 > c2
+        }
+      }
+    }
+
+    def calculateScenicScore: Array[Array[Int]] = {
+      array.zipWithIndex.map { (row, i) =>
+        row.zipWithIndex.map { (cell, j) =>
+          array.calculateScenicScoreAtPos(i, j)
+        }
+      }
+    }
+
+    def calculateScenicScoreAtPos(i: Int, j: Int): Int = {
+      val row = array(i)
+      val col = array.map(_(j))
+      if (i == 0 || j == 0 || i == col.length - 1 || j == row.length - 1)
+        0
+      else {
+        val value = array(i)(j)
+
+        var left = 1
+        var k = j - 1
+        while (k > 0 && row(k) < value) {
+          left += 1
+          k -= 1
+        }
+
+        var top = 1
+        k = i - 1
+        while (k > 0 && col(k) < value) {
+          top += 1
+          k -= 1
+        }
+
+        var right = 1
+        k = j + 1
+        while (k < row.length - 1 && row(k) < value) {
+          right += 1
+          k += 1
+        }
+
+        var bottom = 1
+        k = i + 1
+        while (k < col.length - 1 && col(k) < value) {
+          bottom += 1
+          k += 1
+        }
+
+        left*right*bottom*top
+      }
+    }
+
+  extension (array: Array[Array[Boolean]])
+    def countTrue: Int = array.flatten.map { b => if (b) 1 else 0 }.sum
+
+  val source = Source.fromFile("resources/input-day-08")
+  val input = source.getLines.toArray
+  source.close
 
   val matrix = input.map(_.toCharArray.toArray.map(_.asDigit))
+  val maxFromLeft = matrix.map { row =>
+    row.scanLeft(-1)(_.max(_)).dropRight(1)
+  }
+  val maxFromRight = matrix.map { row =>
+    row.scanRight(-1)(_.max(_)).drop(1)
+  }
+  val maxFromTop = matrix.transpose.map { col =>
+    col.scanLeft(-1)(_.max(_)).dropRight(1)
+  }.transpose
+  val maxFromBottom = matrix.transpose.map { col =>
+    col.scanRight(-1)(_.max(_)).drop(1)
+  }.transpose
+  val minVals = maxFromLeft
+    .combineMin(maxFromRight)
+    .combineMin(maxFromBottom)
+    .combineMin(maxFromTop)
+
+  val visible = matrix.isBigger(minVals)
+  println(s"Total number: ${visible.countTrue}")
+  println(s"Max scenic number: ${matrix.calculateScenicScore.flatten.max}")
 }
 
 private def day07: Unit = {
