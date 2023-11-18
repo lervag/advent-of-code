@@ -1,38 +1,73 @@
 import scala.util.{Using, Success, Failure}
-import scala.collection.mutable.{ArrayBuffer, Stack, Map => MutableMap, ListBuffer}
+import scala.collection.mutable.{Queue, ArrayBuffer, Stack, Map => MutableMap, ListBuffer}
 import scala.io.Source
 
 import ujson._
 
 @main def day16: Unit = {
-  case class Node(name: String, rate: Int, edges: List[String]) {
-    var is_open = false
+  case class Valve(name: String, rate: Int, tunnels: Vector[String])
+
+  val mapOfValves = Source.fromFile("resources/input-day-16a").getLines.toVector
+    .map(_ match {
+      case s"Valve $n has flow rate=$r; tunnels lead to valves $v"
+        => Valve(n, r.toInt, v.split(", ").toVector)
+      case s"Valve $n has flow rate=$r; tunnel leads to valve $v"
+        => Valve(n, r.toInt, Vector(v))
+      case _
+        => Valve("_", 0, Vector[String]())
+    })
+    .map(v => v.name -> v)
+    .toMap
+
+  //   -----------------i---
+  //  /                     \
+  // a------B-------C       J
+  // \         /
+  //  \       /              g--H
+  //   \     /               |
+  //    D------------E-------f
+
+  case class State(current: Valve, steps: Vector[String] = Vector(), released: Int = 0, releasing: Int = 0, opened: Vector[String] = Vector()) {
+    def canOpen: Boolean = current.rate > 0 && !opened.contains(current.name)
+
+    override def toString(): String =
+      s"Valves ${opened.mkString(", ")} are open: releasing/released = ${releasing}/${released}."
   }
 
-  val graph = Source.fromFile("resources/input-day-16a")
-    .getLines.toList.map(_ match {
-      case s"Valve $n has flow rate=$r; tunnels lead to valves $v"
-        => Node(n, r.toInt, v.split(", ").toList)
-      case s"Valve $n has flow rate=$r; tunnel leads to valve $v"
-        => Node(n, r.toInt, List(v))
-      case _
-        => Node("", 0, List(""))
-    })
-  val mapNameToNode = graph.map( n => n.name -> n ).toMap
+  def move(state: State, target: String) = state.copy(
+      steps = state.steps ++ Vector(s"You move to valve ${target}"),
+      released = state.released + state.releasing,
+      current = mapOfValves(target),
+    )
 
-  // val graphShortestPath = Map[(Node, Node), Int]()
+  def open(state: State) =
+    state.copy(
+      steps = state.steps ++ Vector(s"You open valve ${state.current.name}"),
+      released = state.released + state.releasing,
+      opened = state.opened ++ Vector(state.current.name),
+      releasing = state.releasing + state.current.rate,
+      )
 
-  // def getValue(remaining_time: Int, source: Node, target: Node) = {
-  //   if (target.is_open || target.rate == 0)
-  //     0
-  //   else {
-  //     (remaining_time - graphShortestPath(source, target) - 1)*target.rate
-  //   }
-  // }
+  def getOptimalRoute(totalTime: Int): State = {
+    var currentStates = ListBuffer(State(mapOfValves("AA")))
+    (totalTime to 0 by -1) foreach { time =>
+      var nextStates = ListBuffer[State]()
 
-  val time = 30
-  val origin = "AA"
-  var current = mapNameToNode(origin)
+      currentStates.foreach { state =>
+        if (state.canOpen) {
+          nextStates += open(state)
+        }
+        state.current.tunnels.foreach { name =>
+          nextStates += move(state, name)
+        }
+      }
+
+      currentStates = nextStates.distinctBy { s => (s.current.name, s.released, s.releasing, s.opened) }
+    }
+    currentStates.maxBy(_.released)
+  }
+
+  println(getOptimalRoute(20))
 }
 private def day15: Unit = {
   case class Beacon(x: Int, y: Int)
@@ -790,6 +825,7 @@ private def day03: Unit = {
   }
   val source = Source.fromFile("resources/input-day-03")
   val lines = source.getLines.toList
+  // toVector er bedre
   source.close()
   val sum_priority = lines.map(getDuplicate).map(getPriority).sum
   val group_priority = lines
