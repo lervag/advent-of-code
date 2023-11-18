@@ -1,21 +1,10 @@
 package year2022
 
-import ujson._
-
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.Queue
-import scala.collection.mutable.Stack
-import scala.collection.mutable.{Map => MutableMap}
 import scala.io.Source
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Using
 
 def day03: Unit = {
   val source = Source.fromFile("resources/input-day-03")
-  val lines = source.getLines.toList
-  // toVector er bedre
+  val lines = source.getLines.toVector
   source.close()
   val sum_priority = lines.map(getDuplicate).map(getPriority).sum
   val group_priority = lines

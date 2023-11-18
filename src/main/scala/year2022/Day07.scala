@@ -1,52 +1,37 @@
-import scala.util.{Using, Success, Failure}
-import scala.collection.mutable.{Queue, ArrayBuffer, Stack, Map => MutableMap, ListBuffer}
+package year2022
+
+import scala.collection.mutable.{Stack, Map => MutableMap, ListBuffer}
 import scala.io.Source
 
-import ujson._
+sealed trait Path
+sealed case class File(name: String, size: Int) extends Path
+sealed case class Dir(path: String, var size: Int = 0) extends Path
 
-private def day07: Unit = {
+def day07: Unit = {
   val source = Source.fromFile("resources/input-day-07")
   val input = source.getLines.toList
   source.close
-
-  trait Path
-  case class File(name: String, size: Int) extends Path
-  case class Dir(path: String, var size: Int = 0) extends Path
 
   val fileMap = MutableMap[String, ListBuffer[Path]]()
   var pathStack = Stack[String]()
   input foreach { line =>
     val current = "/" + pathStack.reverse.mkString("/")
     line match {
-      case "$ cd /" => pathStack.popAll
-      case "$ cd .." => pathStack.pop
+      case "$ cd /"         => pathStack.popAll
+      case "$ cd .."        => pathStack.pop
       case s"$$ cd ${path}" => pathStack.push(path)
-      case "$ ls" => fileMap(current) = ListBuffer[Path]()
-      case s"dir ${name}" => fileMap(current) += (current match {
-        case "/" => Dir(s"/$name")
-        case _ => Dir(s"$current/$name")
-      })
+      case "$ ls"           => fileMap(current) = ListBuffer[Path]()
+      case s"dir ${name}" =>
+        fileMap(current) += (current match {
+          case "/" => Dir(s"/$name")
+          case _   => Dir(s"$current/$name")
+        })
       case s"${size} ${name}" => fileMap(current) += File(name, size.toInt)
-      case _ => None
+      case _                  => None
     }
   }
 
-  def calc_size(files: ListBuffer[Path]): Int = {
-    var sum = 0
-    files foreach { x =>
-      x match {
-        case d: Dir => {
-          d.size = calc_size(fileMap(d.path))
-          sum += d.size
-        }
-        case f: File => sum += f.size
-        case _ => None
-      }
-    }
-    sum
-  }
-
-  val root = Dir("/", calc_size(fileMap("/")))
+  val root = Dir("/", calc_size(fileMap("/"), fileMap))
 
   val dirMap = MutableMap[String, Int]()
   dirMap("/") = root.size
@@ -55,7 +40,7 @@ private def day07: Unit = {
     x foreach { y =>
       y match {
         case d: Dir => dirMap(d.path) = d.size
-        case _ => None
+        case _      => None
       }
     }
   }
@@ -65,7 +50,6 @@ private def day07: Unit = {
     .values
     .sum
   println(s"Sum of small dirs: $sumOfSmallDirs")
-
 
   val totalSpace = 70000000
   val spaceRequired = 30000000
@@ -77,6 +61,24 @@ private def day07: Unit = {
   val smallestButLargeEnough = dirMap
     .filter { (key, value) => value >= mustFreeUp }
     .toList
-    .sortBy (_._2)
-    .foreach { (k, v) => println(f"$v%10d $k")}
+    .sortBy(_._2)
+    .foreach { (k, v) => println(f"$v%10d $k") }
+}
+
+private def calc_size(
+    files: ListBuffer[Path],
+    fileMap: MutableMap[String, ListBuffer[Path]]
+): Int = {
+  var sum = 0
+  files foreach { x =>
+    x match {
+      case d: Dir => {
+        d.size = calc_size(fileMap(d.path), fileMap)
+        sum += d.size
+      }
+      case f: File => sum += f.size
+      case null    => None
+    }
+  }
+  sum
 }

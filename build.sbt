@@ -6,6 +6,7 @@ lazy val root = project
     name := "advent-of-code",
     version := "0.15.0",
     scalaVersion := scala3Version,
+    semanticdbEnabled := true,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "upickle" % "3.1.3",
     )

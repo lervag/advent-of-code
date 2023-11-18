@@ -1,18 +1,8 @@
-import scala.util.{Using, Success, Failure}
-import scala.collection.mutable.{Queue, ArrayBuffer, Stack, Map => MutableMap, ListBuffer}
+package year2022
+
 import scala.io.Source
 
-import ujson._
-
-private def day06: Unit = {
-  def identify(s: String, n: Int): Int = {
-    (n to s.length).zipWithIndex
-      .map { (i2, i1) => (i1, i2, s.substring(i1, i2).toSet.size) }
-      .takeWhile { _._3 < n }
-      .last
-      ._2 + 1
-  }
-
+def day06: Unit = {
   val source = Source.fromFile("resources/input-day-06")
   val input = source.getLines.toList(0)
   source.close
@@ -30,4 +20,12 @@ private def day06: Unit = {
   println(s"${identify("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", 14)} 29")
   println(s"${identify("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", 14)} 26")
   println(s"Answer: ${identify(input, 14)}")
+}
+
+private def identify(s: String, n: Int): Int = {
+  (n to s.length).zipWithIndex
+    .map { (i2, i1) => (i1, i2, s.substring(i1, i2).toSet.size) }
+    .takeWhile { _._3 < n }
+    .last
+    ._2 + 1
 }

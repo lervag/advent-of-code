@@ -1,42 +1,18 @@
-import scala.util.{Using, Success, Failure}
-import scala.collection.mutable.{Queue, ArrayBuffer, Stack, Map => MutableMap, ListBuffer}
+package year2022
+
+import scala.collection.mutable.{Map => MutableMap}
 import scala.io.Source
 
-import ujson._
-
-private def day09: Unit = {
-  def moveTail(t: (Int, Int), h: (Int, Int)): (Int, Int) = {
-    if (t._1 < h._1 - 1)
-      if (t._2 < h._2 - 1)
-        (h._1 - 1, h._2 - 1)
-      else if (t._2 > h._2 + 1)
-        (h._1 - 1, h._2 + 1)
-      else
-        (h._1 - 1, h._2)
-    else if (t._1 > h._1 + 1)
-      if (t._2 < h._2 - 1)
-        (h._1 + 1, h._2 - 1)
-      else if (t._2 > h._2 + 1)
-        (h._1 + 1, h._2 + 1)
-      else
-        (h._1 + 1, h._2)
-    else if (t._2 < h._2 - 1)
-      (h._1, h._2 - 1)
-    else if (t._2 > h._2 + 1)
-      (h._1, h._2 + 1)
-    else
-      t
-  }
-
+def day09: Unit = {
   val source = Source.fromFile("resources/input-day-09")
   val input = source.getLines.toArray
   source.close
 
   val steps = input
     .map(_.split(" ") match {
-        case Array(a, b) => (a, b.toInt)
-        case _ => ("", 0)
-      })
+      case Array(a, b) => (a, b.toInt)
+      case _           => ("", 0)
+    })
     .flatMap { (a, b) => List.fill(b)(a) }
 
   val visited = MutableMap[(Int, Int), Boolean]()
@@ -60,7 +36,7 @@ private def day09: Unit = {
       case "D" => (posH._1, posH._2 - 1)
       case "R" => (posH._1 + 1, posH._2)
       case "U" => (posH._1, posH._2 + 1)
-      case _ => (0, 0)
+      case _   => (0, 0)
     }
     pos1 = moveTail(pos1, posH)
     pos2 = moveTail(pos2, pos1)
@@ -75,4 +51,27 @@ private def day09: Unit = {
   }
 
   println(visited.size)
+}
+
+private def moveTail(t: (Int, Int), h: (Int, Int)): (Int, Int) = {
+  if (t._1 < h._1 - 1)
+    if (t._2 < h._2 - 1)
+      (h._1 - 1, h._2 - 1)
+    else if (t._2 > h._2 + 1)
+      (h._1 - 1, h._2 + 1)
+    else
+      (h._1 - 1, h._2)
+  else if (t._1 > h._1 + 1)
+    if (t._2 < h._2 - 1)
+      (h._1 + 1, h._2 - 1)
+    else if (t._2 > h._2 + 1)
+      (h._1 + 1, h._2 + 1)
+    else
+      (h._1 + 1, h._2)
+  else if (t._2 < h._2 - 1)
+    (h._1, h._2 - 1)
+  else if (t._2 > h._2 + 1)
+    (h._1, h._2 + 1)
+  else
+    t
 }

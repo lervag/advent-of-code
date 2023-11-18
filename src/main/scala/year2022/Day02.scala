@@ -1,7 +1,5 @@
 package year2022
 
-import ujson._
-
 import scala.io.Source
 
 def day02: Unit = {
