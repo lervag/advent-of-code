@@ -1,4 +1,6 @@
 target
-.bsp
 metals.sbt
+.bsp
+.metals
+
 *.sc
