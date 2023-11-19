@@ -1,81 +1,117 @@
 package year2022
 
-import scala.collection.mutable.ListBuffer
 import scala.io.Source
+import scala.collection.mutable
+
+//                          21
+//   -----------------i-----J
+//  /     13      2
+// a------B-------C
+// \         /
+//  \       /
+//   \20   /       3                     22
+//    D------------E-------f------g------H
 
 def day16: Unit = {
-  val mapOfValves = Source
-    .fromFile("resources/input-day-16a")
+  val valves = mutable.Map[String, Integer]()
+  val tunnels = mutable.Map[String, Vector[String]]()
+  Source
+    .fromFile("resources/input-day-16")
     .getLines
-    .toVector
-    .map(_ match {
+    .foreach(_ match {
       case s"Valve $n has flow rate=$r; tunnels lead to valves $v" =>
-        Valve(n, r.toInt, v.split(", ").toVector)
+        valves(n) = r.toInt
+        tunnels(n) = v.split(", ").toVector
       case s"Valve $n has flow rate=$r; tunnel leads to valve $v" =>
-        Valve(n, r.toInt, Vector(v))
-      case _ => Valve("_", 0, Vector[String]())
+        valves(n) = r.toInt
+        tunnels(n) = Vector(v)
     })
-    .map(v => v.name -> v)
-    .toMap
 
-  println(getOptimalRoute(20, mapOfValves))
-}
+  val distances = mutable.Map[String, mutable.Map[String, Integer]]()
+  valves
+    .filter((id, rate) => id == "AA" || rate > 0)
+    .foreach { (id, _) =>
+      distances(id) = mutable.Map[String, Integer]((id -> 0), ("AA" -> 0))
 
-//   -----------------i---
-//  /                     \
-// a------B-------C       J
-// \         /
-//  \       /              g--H
-//   \     /               |
-//    D------------E-------f
+      val visited = mutable.Set(id)
+      val queue = mutable.Queue[(String, Integer)]((id, 0))
 
-sealed case class Valve(name: String, rate: Int, tunnels: Vector[String])
-
-sealed case class State(
-    current: Valve,
-    steps: Vector[String] = Vector(),
-    released: Int = 0,
-    releasing: Int = 0,
-    opened: Vector[String] = Vector()
-) {
-  def canOpen: Boolean = current.rate > 0 && !opened.contains(current.name)
-
-  override def toString(): String =
-    s"Valves ${opened.mkString(", ")} are open: releasing/released = ${releasing}/${released}."
-}
-
-private def move(state: State, target: String, map: Map[String, Valve]) =
-  state.copy(
-    steps = state.steps ++ Vector(s"You move to valve ${target}"),
-    released = state.released + state.releasing,
-    current = map(target)
-  )
-
-private def open(state: State) =
-  state.copy(
-    steps = state.steps ++ Vector(s"You open valve ${state.current.name}"),
-    released = state.released + state.releasing,
-    opened = state.opened ++ Vector(state.current.name),
-    releasing = state.releasing + state.current.rate
-  )
-
-private def getOptimalRoute(totalTime: Int, map: Map[String, Valve]): State = {
-  var currentStates = ListBuffer(State(map("AA")))
-  (totalTime to 0 by -1) foreach { time =>
-    var nextStates = ListBuffer[State]()
-
-    currentStates.foreach { state =>
-      if (state.canOpen) {
-        nextStates += open(state)
+      while (queue.size > 0) {
+        val (currentId, currentDistance) = queue.dequeue
+        for (neighbourId <- tunnels(currentId).filterNot(visited.contains(_))) {
+          visited.add(neighbourId)
+          if (valves(neighbourId) > 0) {
+            distances(id)(neighbourId) = currentDistance + 1
+          }
+          queue += ((neighbourId, currentDistance + 1))
+        }
       }
-      state.current.tunnels.foreach { name =>
-        nextStates += move(state, name, map)
-      }
+
+      distances(id).remove("AA")
+      if (id != "AA") distances(id).remove(id)
     }
 
-    currentStates = nextStates.distinctBy { s =>
-      (s.current.name, s.released, s.releasing, s.opened)
+  val indices = distances.keys.zipWithIndex.toMap
+  val cache = mutable.Map[(Integer, String, Int), Integer]()
+  println(dfs(30, "AA", 0, valves, distances, indices, cache))
+
+  val before = System.currentTimeMillis
+  var maxFlow = 0
+  val allClosed = (1 << indices.size) - 1
+  (0 to allClosed / 2).foreach { i =>
+    maxFlow = math.max(
+      maxFlow,
+      dfs(26, "AA", i, valves, distances, indices, cache)
+        + dfs(26, "AA", allClosed ^ i, valves, distances, indices, cache)
+    )
+  }
+  println(maxFlow)
+  val after = System.currentTimeMillis
+  println("Elapsed time: " + (after - before) + "ms")
+}
+
+private def dfs(
+    time: Integer,
+    valve: String,
+    opened: Int,
+    valves: mutable.Map[String, Integer],
+    distances: mutable.Map[String, mutable.Map[String, Integer]],
+    indices: Map[String, Int],
+    cache: mutable.Map[(Integer, String, Int), Integer]
+): Integer = {
+  if cache.contains((time, valve, opened)) then
+    return cache((time, valve, opened))
+  var maxFlow = 0
+
+  for ((neighbour, distance) <- distances(valve)) {
+    val bit = 1 << indices(neighbour)
+    if ((opened & bit) == 0) {
+      val remtime = time - distance - 1
+      if (remtime > 0) {
+        maxFlow = math.max(
+          maxFlow,
+          remtime * valves(neighbour) + dfs(
+            remtime,
+            neighbour,
+            (opened | bit),
+            valves,
+            distances,
+            indices,
+            cache
+          )
+        )
+      }
     }
   }
-  currentStates.maxBy(_.released)
+
+  cache((time, valve, opened)) = maxFlow
+  return maxFlow
+}
+
+def time[T](block: => T): T = {
+  val before = System.currentTimeMillis
+  val result = block
+  val after = System.currentTimeMillis
+  println("Elapsed time: " + (after - before) + "ms")
+  result
 }
