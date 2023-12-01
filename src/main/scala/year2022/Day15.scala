@@ -16,7 +16,7 @@ def day15: Unit = {
   })
   source.close
 
-  search(sensors, searchSpace)
+  searchRows(sensors, searchSpace)
 }
 
 sealed case class Beacon(x: Int, y: Int)
@@ -36,7 +36,7 @@ private def coverage(sensors: List[Sensor], row: Int) = sensors
   .map { s => s.coverage(row) }
 // .foldLeft(Vector[Int]()) { (a, b) => a.union(b) }
 
-private def search(sensors: List[Sensor], maxRow: Int) = {
+private def searchRows(sensors: List[Sensor], maxRow: Int) = {
   var x: Long = -1
   var y: Long = -1
   while (y <= maxRow && x < 0) {
