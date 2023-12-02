@@ -1,3 +1,3 @@
 import year2023._
 
-@main def main: Unit = day01
+@main def main: Unit = day02
