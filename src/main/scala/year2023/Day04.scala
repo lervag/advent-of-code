@@ -18,13 +18,22 @@ def day04: Unit = {
     }
   }
 
+  val counter = mutable.Map.empty[Int, Int].withDefaultValue(0)
   val part1 = cards.map { (card, winning_numbers, card_numbers) =>
-    val appears = card_numbers.intersect(winning_numbers)
-    if (appears.size > 0)
-      1 << (appears.size - 1)
+    // Count number of cards for part 2
+    counter(card) += 1
+    (1 to card_numbers.intersect(winning_numbers).size).foreach { i =>
+      counter(card + i) += counter(card)
+    }
+
+    // Score for part 1
+    val n = card_numbers.intersect(winning_numbers).size - 1
+    if (n >= 0)
+      1 << n
     else
       0
   }.sum
 
   println(s"Part 1: $part1")
+  println(s"Part 2: ${counter.values.sum}")
 }
