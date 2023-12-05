@@ -80,7 +80,7 @@ private def seedsToMinLocation(
     mapsOrdered: Vector[Vector[(Inclusive[BigInt], BigInt)]]
 ): BigInt =
   mapsOrdered
-    .foldLeft(Set(input)) { (acc, map) => println(acc.size); followMapRangeSet(acc, map) }
+    .foldLeft(Set(input)) { (acc, map) => followMapRangeSet(acc, map) }
     .map(_.min)
     .min
 
@@ -90,7 +90,6 @@ private def followMapRangeSet(
 ): Set[Inclusive[BigInt]] = {
   input
     .map { seedRange =>
-      println("Working ...")
       val (outSets, seedsRemaining) =
         map.foldLeft((Set.empty[Inclusive[BigInt]], seedRange)) {
           case ((outSets, seedsRemaining), (source, diff)) =>
