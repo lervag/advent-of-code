@@ -50,6 +50,7 @@ def day05: Unit = {
   println(s"Part 1: $part1")
 
   // Solve Part 2
+  val before = System.currentTimeMillis
   val part2 = seeds
     .grouped(2)
     .toVector
@@ -58,6 +59,8 @@ def day05: Unit = {
     .map { range => seedsToMinLocation(range, mapsOrdered) }
     .min
   println(s"Part 2: $part2")
+  val after = System.currentTimeMillis
+  println("Elapsed time: " + (after - before) + "ms")
 }
 
 private def seedToLocation(
@@ -80,37 +83,46 @@ private def seedsToMinLocation(
     mapsOrdered: Vector[Vector[(Inclusive[BigInt], BigInt)]]
 ): BigInt =
   mapsOrdered
-    .foldLeft(Set(input)) { (acc, map) => followMapRangeSet(acc, map) }
+    .foldLeft(Vector(input)) { (acc, map) => followMapRangeVector(acc, map) }
     .map(_.min)
     .min
 
-private def followMapRangeSet(
-    input: Set[Inclusive[BigInt]],
+private def followMapRangeVector(
+    input: Vector[Inclusive[BigInt]],
     map: Vector[(Inclusive[BigInt], BigInt)]
-): Set[Inclusive[BigInt]] = {
+): Vector[Inclusive[BigInt]] = {
   input
     .map { seedRange =>
-      val (outSets, seedsRemaining) =
-        map.foldLeft((Set.empty[Inclusive[BigInt]], seedRange)) {
-          case ((outSets, seedsRemaining), (source, diff)) =>
+      val (outVectors, seedsRemaining) =
+        map.foldLeft((Vector.empty[Inclusive[BigInt]], seedRange)) {
+          case ((outVectors, seedsRemaining), (source, diff)) =>
             val intersection = rangeIntersection(seedsRemaining, source)
             if (intersection.size > 0) {
               (
-                outSets + intersection.addOffset(diff),
+                outVectors :+ intersection.addOffset(diff),
                 rangeMinus(seedsRemaining, intersection)
               )
             } else {
-              (outSets, seedsRemaining)
+              (outVectors, seedsRemaining)
             }
         }
 
       if (seedsRemaining.size > 0)
-        outSets + seedsRemaining
+        outVectors :+ seedsRemaining
       else
-        outSets
+        outVectors
     }
-    .foldLeft(Set.empty[Inclusive[BigInt]]) { (acc, nextSet) =>
-      acc.union(nextSet)
+    .foldLeft(Vector.empty[Inclusive[BigInt]]) { (acc, ranges) =>
+      acc ++ ranges
+    }
+    .sorted
+    .foldLeft(Vector.empty[Inclusive[BigInt]]) { (acc, range) =>
+      acc.lastOption match {
+        case Some(prevRange) if range.start == prevRange.end + 1 =>
+          acc.dropRight(1) :+ (prevRange.start to range.end)
+        case _ =>
+          acc :+ range
+      }
     }
 }
 
