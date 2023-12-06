@@ -8,11 +8,11 @@ import scala.collection.immutable.NumericRange.Inclusive
 import scala.collection.immutable.NumericRange
 
 def day06: Unit = {
-  val source = Source.fromFile("resources/2023/day-06a")
+  val source = Source.fromFile("resources/2023/day-06")
   val lines = source.getLines.toVector
   source.close()
 
-  // We want to find the range of charging values for each game 
+  // We want to find the range of charging values for each game
   //
   // C^2 - TC + L = 0
   // C = (T ± sqrt(T^2 - 4L)) / 2
@@ -30,9 +30,9 @@ def day06: Unit = {
     .product
   println(s"Part 1: $part1")
 
-  // val T2 = BigInt(lines(0).substring(10).replace(" ", "").toInt)
-  // val D2 = BigInt(lines(1).substring(10).replace(" ", "").toInt)
-  // val C1 = 0.5*(T2 - math.sqrt(T2*T2 - 4*D2)) + 1e-9
-  // val C2 = 0.5*(T2 + math.sqrt(T2*T2 - 4*D2)) - 1e-9
-  // println(s"Part 2: ${C2 - C1}")
+  val T2 = BigInt(lines(0).substring(10).replace(" ", ""))
+  val D2 = BigInt(lines(1).substring(10).replace(" ", ""))
+  val C1 = 0.5*(T2.toDouble - math.sqrt((T2*T2 - 4*D2).toDouble)) + 1e-9
+  val C2 = 0.5*(T2.toDouble + math.sqrt((T2*T2 - 4*D2).toDouble)) + 1e-9
+  println(s"Part 2: ${C2.toInt - C1.ceil.toInt + 1}")
 }
