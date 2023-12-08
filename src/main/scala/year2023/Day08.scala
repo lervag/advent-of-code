@@ -11,35 +11,38 @@ def day08: Unit = {
     case 'L' => 0
     case 'R' => 1
   }.toVector
-  val paths = lines.drop(2).map { case s"$x = ($y, $z)" => x -> Vector(y, z) }.toMap
+  val paths =
+    lines.drop(2).map { case s"$x = ($y, $z)" => x -> Vector(y, z) }.toMap
 
-  Stream.iterate((0, "AAA")) { (i, c) =>
-    (i + 1, paths(c)(directions(i % directions.size)))
-  }
-    .takeWhile { (i, _) => i < 100000 }
-    .find { (_, c) => c == "ZZZ" }
-    match {
-      case Some((steps, _)) => println(s"Part 1: $steps")
-      case None    => None
+  val part1 = Stream
+    .iterate((0, "AAA")) { case (i, c) =>
+      (i + 1, paths(c)(directions(i % directions.size)))
     }
+    .takeWhile { case (i, _) => i < 100000 }
+    .find { case (_, c) => c == "ZZZ" }
+    .map { case (steps, _) => steps }
+    .getOrElse(0)
 
-  def getSteps(startStep: BigInt, startPos: String): BigInt =
-    Stream.iterate((startStep, startPos)) { (i, c) =>
-      (i + 1, paths(c)(directions((i % directions.size).toInt)))
-    }
-      .find { (_, c) => c(2) == 'Z' }
-      match {
-        case Some(n, _) => n
-        case None    => 0
+  val getSteps: (BigInt, String) => BigInt = (startStep, startPos) => {
+    Stream
+      .iterate((startStep, startPos)) { case (i, c) =>
+        (i + 1, paths(c)(directions((i % directions.size).toInt)))
       }
-  def gcd(a: BigInt, b: BigInt): BigInt = if (b == 0) a else gcd(b, a % b)
-
-  val firstZ = paths.keys
-    .filter { k => k(2) == 'A' }.toVector
-    .map { n => getSteps(0, n) }
-  val lcm = firstZ.foldLeft(BigInt(1)) { (acc, factor) =>
-    (acc * factor)/gcd(acc, factor)
+      .find { case (_, c) => c(2) == 'Z' }
+      .map { case (n, _) => n }
+      .getOrElse(0)
   }
-  println(s"Part 2: $lcm")
+
+  val part2 = paths.keys
+    .filter { k => k(2) == 'A' }
+    .toVector
+    .map { n => getSteps(0, n) }
+    .foldLeft(BigInt(1)) { case (acc, factor) =>
+      (acc * factor) / gcd(acc, factor)
+    }
+
+  println(s"Part 1: $part1")
+  println(s"Part 2: $part2")
 }
 
+private def gcd(a: BigInt, b: BigInt): BigInt = if (b == 0) a else gcd(b, a % b)
