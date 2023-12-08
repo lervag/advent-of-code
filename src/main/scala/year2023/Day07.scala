@@ -7,14 +7,7 @@ def day07: Unit = {
   val lines = source.getLines.toVector
   source.close()
 
-  val hands = lines
-    .map { line =>
-      val hand = line.substring(0, 5).toVector
-      val bid = line.substring(5).trim.toInt
-      (hand, bid)
-    }
-
-  val scores = Map[Char, Int](
+  val scores = Map(
     'A' -> 12,
     'K' -> 11,
     'Q' -> 10,
@@ -29,26 +22,10 @@ def day07: Unit = {
     '3' -> 1,
     '2' -> 0
   )
-  val part1 = hands
-    .map { (hand, bid) =>
-      val rankSum = hand
-        .map(scores(_))
-        .reverse
-        .zipWithIndex
-        .foldLeft(0.0) { case (acc, (score, exp)) =>
-          acc + score * math.pow(13, exp)
-        } + getType(hand) * math.pow(13, 6)
-
-      (rankSum, bid)
-    }
-    .sorted
-    .map(_._2)
-    .zipWithIndex
-    .map { (b, r) => (r + 1) * b }
-    .sum
+  val part1 = calculateWinnings(lines, scores, getType)
   println(s"Part 1: $part1")
 
-  val scoresNew = Map[Char, Int](
+  val scoresJoker = Map(
     'A' -> 12,
     'K' -> 11,
     'Q' -> 10,
@@ -63,69 +40,86 @@ def day07: Unit = {
     '2' -> 1,
     'J' -> 0
   )
-  val part2 = hands
-    .map { (hand, bid) =>
+  val part2 = calculateWinnings(lines, scoresJoker, getTypeJoker)
+  println(s"Part 2: $part2")
+}
+
+private def calculateWinnings(
+    lines: Vector[String],
+    scores: Map[Char, Int],
+    getTypeFunc: Vector[Char] => Int
+): Int = {
+  val hands = lines.map { line =>
+    val hand = line.take(5).toVector
+    val bid = line.drop(5).trim.toInt
+    (hand, bid)
+  }
+
+  val part = hands
+    .map { case (hand, bid) =>
       val rankSum = hand
-        .map(scoresNew(_))
+        .map(scores(_))
         .reverse
         .zipWithIndex
         .foldLeft(0.0) { case (acc, (score, exp)) =>
           acc + score * math.pow(13, exp)
-        } + getTypeJoker(hand) * math.pow(13, 6)
+        } + getTypeFunc(hand) * math.pow(13, 6)
 
       (rankSum, bid)
     }
     .sorted
     .map(_._2)
     .zipWithIndex
-    .map { (b, r) => (r + 1) * b }
+    .map { case (b, r) => (r + 1) * b }
     .sum
-  println(s"Part 2: $part2")
-}
 
-private def getTypeJoker(hand: Vector[Char]): Int = {
-  val jokers = hand.filter(_ == 'J').size
-  val map = hand
-    .filter(_ != 'J')
-    .groupBy(identity)
-    .map { (c, v) => (c, v.size) }
-  val counts = map.values.toVector
-
-  (map.size, jokers) match {
-    case (0, 5)          => 6
-    case (1, j)          => 6
-    case (2, j) if j > 1 => 5
-    case (2, j) if j <= 1 =>
-      if (map.values.exists(_ == 4 - j))
-        5
-      else
-        4
-    case (3, j) if j > 0 => 3
-    case (3, 0) =>
-      if (map.values.exists(_ == 3))
-        3
-      else
-        2
-    case (4, j) => 1
-    case (5, 0) => 0
-  }
+  part
 }
 
 private def getType(hand: Vector[Char]): Int = {
-  val map = hand.groupBy(identity).map { (c, v) => (c, v.size) }
+  val map = hand.groupBy(identity).mapValues(_.size).toVector
   map.size match {
     case 1 => 6
     case 2 =>
-      if (map.values.exists(_ == 4))
+      if (map.map(_._2).contains(4))
         5
       else
         4
     case 3 =>
-      if (map.values.exists(_ == 3))
+      if (map.map(_._2).contains(3))
         3
       else
         2
     case 4 => 1
     case 5 => 0
+  }
+}
+
+private def getTypeJoker(hand: Vector[Char]): Int = {
+  val jokers = hand.count(_ == 'J')
+  val map = hand
+    .filter(_ != 'J')
+    .groupBy(identity)
+    .mapValues(_.size)
+    .toVector
+  val counts = map.map(_._2)
+
+  (map.size, jokers) match {
+    case (0, 5)          => 6
+    case (1, _)          => 6
+    case (2, j) if j > 1 => 5
+    case (2, j) if j <= 1 =>
+      if (counts.contains(4 - j))
+        5
+      else
+        4
+    case (3, j) if j > 0 => 3
+    case (3, 0) =>
+      if (counts.contains(3))
+        3
+      else
+        2
+    case (4, _) => 1
+    case (5, 0) => 0
   }
 }
