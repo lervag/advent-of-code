@@ -1,5 +1,18 @@
 val scala3Version = "3.3.0"
 
+//enablePlugins(ScalaNativePlugin)
+
+// import to add Scala Native options
+//import scala.scalanative.build._
+
+// defaults set with common options shown
+//nativeConfig ~= { c =>
+//  c.withLTO(LTO.thin)
+//  //c.withLTO(LTO.none)
+//    .withMode(Mode.release)
+//    .withGC(GC.none)
+//}
+
 lazy val root = project
   .in(file("."))
   .settings(
