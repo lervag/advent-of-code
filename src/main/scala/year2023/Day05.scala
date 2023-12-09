@@ -50,7 +50,6 @@ def day05: Unit = {
   println(s"Part 1: $part1")
 
   // Solve Part 2
-  val before = System.currentTimeMillis
   val part2 = seeds
     .grouped(2)
     .toVector
@@ -59,8 +58,6 @@ def day05: Unit = {
     .map { range => seedsToMinLocation(range, mapsOrdered) }
     .min
   println(s"Part 2: $part2")
-  val after = System.currentTimeMillis
-  println("Elapsed time: " + (after - before) + "ms")
 }
 
 private def seedToLocation(
