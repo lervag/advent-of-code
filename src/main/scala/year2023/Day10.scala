@@ -34,17 +34,14 @@ private def findInside(
   } {
     if (isLoop(i)(j))
       board(i)(j) match {
-        case '|' => isInside = !isInside
-        case 'S' => isInside = !isInside
+        case '|' | 'S' => isInside = !isInside
         case 'L' => p = 'L'
         case 'F' => p = 'F'
         case 'J' =>
-          if (p == 'F')
-            isInside = !isInside
+          if (p == 'F') isInside = !isInside
           p = '.'
         case '7' =>
-          if (p == 'L')
-            isInside = !isInside
+          if (p == 'L') isInside = !isInside
           p = '.'
         case _ =>
       }
