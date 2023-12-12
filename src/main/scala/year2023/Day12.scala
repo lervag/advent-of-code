@@ -1,8 +1,7 @@
 package year2023
 
 import scala.io.Source
-import scala.annotation.tailrec
-
+import scala.collection.mutable
 
 def day12: Unit = {
   val source = Source.fromFile("resources/2023/day-12")
@@ -17,9 +16,23 @@ def day12: Unit = {
 
   val part1 = records.map { (s, g) => countArrangements(s, -1, g, 0) }.sum
   println(s"Part 1: $part1")
+
+  val unfolded = records.map { (s, g) =>
+    (Vector.fill(5)(s).mkString("?"), Vector.fill(5)(g).flatten)
+  }
+  val part2 = unfolded.map { (s, g) => countArrangements(s, -1, g, 0) }.sum
+  println(s"Part 2: $part2")
 }
 
-private def countArrangements(springs: String, currentNum: Int, remainingGroups: Vector[Int], i: Int): Int = {
+private val cache = mutable.Map.empty[(String, Int, Vector[Int], Int), BigInt]
+
+private def countArrangements(springs: String, currentNum: Int, remainingGroups: Vector[Int], i: Int): BigInt =
+  cache.getOrElseUpdate(
+    (springs, currentNum, remainingGroups, i),
+    countArrangementsAux(springs, currentNum, remainingGroups, i)
+  )
+
+private def countArrangementsAux(springs: String, currentNum: Int, remainingGroups: Vector[Int], i: Int): BigInt = {
   if (i >= springs.length)
     if (remainingGroups.isEmpty && currentNum <= 0)
       1
