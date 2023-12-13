@@ -44,7 +44,7 @@ private def countArrangementsAux(springs: String, currentNum: Int, remainingGrou
     else
       1
   else
-    springs(i) match {
+    springs(i) match
       case '#' =>
         if (currentNum == 0)
           0
@@ -66,5 +66,4 @@ private def countArrangementsAux(springs: String, currentNum: Int, remainingGrou
           val dot = countArrangements(springs, -1, remainingGroups, i + 1)
           val hash = countArrangements(springs, remainingGroups.head - 1, remainingGroups.tail, i + 1)
           dot + hash
-    }
 }
