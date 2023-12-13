@@ -18,9 +18,9 @@ def day13: Unit = {
     .filter(_.nonEmpty)
     .map(parsePatterns)
 
-  val part1 = patterns
-    .map { case (rows, _, cols, _) => findReflectionValue(rows, cols) }
-    .sum
+  val part1 = patterns.map { case (rows, _, cols, _) =>
+    findReflectionValue(rows, cols)
+  }.sum
   println(s"Part 1: $part1")
 
   val part2 = patterns
@@ -32,44 +32,14 @@ def day13: Unit = {
   println(s"Part 2: $part2")
 }
 
-private def findReflectionValueWithSmudge(
-    patternRows: Vector[Int],
-    rowLength: Int,
-    patternCols: Vector[Int],
-    colLength: Int,
-    currentVal: Int
-) = {
-  val newVal = findSmudge(patternCols, colLength, currentVal)
-  if (newVal > 0)
-    newVal
-  else
-    findSmudge(patternRows, rowLength, currentVal, 100)
+private def parsePatterns(chunk: Vector[String]) = {
+  val bits = chunk.map(
+    _.replaceAllLiterally(".", "0").replaceAllLiterally("#", "1")
+  )
+  val rows = bits.map(Integer.parseInt(_, 2))
+  val cols = bits.transpose.map { v => Integer.parseInt(v.mkString, 2) }
+  (rows, bits.head.size, cols, bits.size)
 }
-
-private def findSmudge(
-    numbers: Vector[Int],
-    numberLength: Int,
-    oldValue: Int,
-    factor: Int = 1,
-): Int = {
-  var i = 0
-  while (i < numbers.size) {
-    var j = 0
-    while (j < numberLength) {
-      val newNumbers = flipBit(numbers, i, j)
-      val newValue = findReflection(newNumbers, factor, oldValue)
-      if (newValue > 0)
-        return newValue
-      j += 1
-    }
-    i += 1
-  }
-
-  0
-}
-
-private def flipBit(numbers: Vector[Int], i: Int, k: Int): Vector[Int] =
-  numbers.updated(i, numbers(i) ^ (1 << k))
 
 private def findReflectionValue(
     patternRows: Vector[Int],
@@ -79,12 +49,12 @@ private def findReflectionValue(
   if (value > 0)
     value
   else
-    findReflection(patternRows, 100)
+    100 * findReflection(patternRows)
 }
 
-private def findReflection(numbers: Vector[Int], factor: Int = 1, ignore: Int = 0): Int =
+private def findReflection(numbers: Vector[Int], ignore: Int = 0): Int =
   (1 until numbers.size)
-    .filterNot(_ == ignore/factor)
+    .filterNot(_ == ignore)
     .find { i =>
       val left = numbers.take(i).reverse
       if (left.size > numbers.size - i)
@@ -92,15 +62,31 @@ private def findReflection(numbers: Vector[Int], factor: Int = 1, ignore: Int = 
       else
         numbers.slice(i, numbers.size).startsWith(left)
     }
-    .map(_*factor)
     .getOrElse(0)
 
-private def parsePatterns(chunk: Vector[String]) = {
-  val bits = chunk.map(
-    _.replaceAllLiterally(".", "0")
-      .replaceAllLiterally("#", "1")
-  )
-  val rows = bits.map(Integer.parseInt(_, 2))
-  val cols = bits.transpose.map { v => Integer.parseInt(v.mkString, 2) }
-  (rows, bits.head.size, cols, bits.size)
+private def findReflectionValueWithSmudge(
+    patternRows: Vector[Int],
+    rowLength: Int,
+    patternCols: Vector[Int],
+    colLength: Int,
+    oldValue: Int
+) = {
+  val value = findSmudgedReflection(patternCols, colLength, oldValue)
+  if (value > 0)
+    value
+  else
+    100 * findSmudgedReflection(patternRows, rowLength, oldValue / 100)
 }
+
+private def findSmudgedReflection(
+    numbers: Vector[Int],
+    numberLength: Int,
+    oldValue: Int
+): Int =
+  (for {
+    i <- (0 until numbers.size).view
+    j <- (0 until numberLength).view
+    newNumbers = numbers.updated(i, numbers(i) ^ (1 << j))
+    newValue = findReflection(newNumbers, oldValue)
+    if newValue > 0
+  } yield newValue).headOption.getOrElse(0)
