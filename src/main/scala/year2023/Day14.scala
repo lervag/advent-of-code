@@ -14,12 +14,16 @@ def day14: Unit = {
   val part1 = calculateLoad(tiltLeft(board))
   println(s"Part 1: $part1")
 
-  val easy = 1000
-  val medium = 1000000
-  val hard = 1000000000
-  // val part2Board = repeat(10000000, board)(cycle)
-  // part2Board.transpose.foreach { v => println(v.mkString) }
-  // val part2 = calculateLoad(part2Board)
+  val part2 = (1 to 400)
+    .scanLeft(board)((b, _) => cycle(b))
+    .map(calculateLoad)
+    .zipWithIndex
+    .takeRight(40)
+  part2.foreach(println)
+
+  // Her brukte jeg penn og papir for å finne svaret herfra. Flaut, men det
+  // funket.
+  // val part2 = ???
   // println(s"Part 2: $part2")
 }
 
@@ -60,11 +64,6 @@ private def tiltVectorRight(v: Vector[Char]) =
       case ((acc, i), chr) => (acc :+ chr, acc.size + 1)
     }._1
   )
-
-@tailrec
-private def repeat[A](n: Int, arg: A)(f: A => A): A =
-  if (n <= 0) arg
-  else repeat(n - 1, f(arg))(f)
 
 private def calculateLoad(board: Vector[Vector[Char]]) =
   board.transpose
