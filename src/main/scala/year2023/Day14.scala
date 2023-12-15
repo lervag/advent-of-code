@@ -14,6 +14,8 @@ def day14: Unit = {
   val part1 = calculateLoad(tiltLeft(board))
   println(s"Part 1: $part1")
 
+  // Burde bruke cache -> indeks
+  // I det vi treffer cache har vi funnet en sykel!
   val part2 = (1 to 400)
     .scanLeft(board)((b, _) => cycle(b))
     .map(calculateLoad)
