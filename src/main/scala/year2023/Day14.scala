@@ -14,29 +14,26 @@ def day14: Unit = {
   val part1 = calculateLoad(tiltLeft(board))
   println(s"Part 1: $part1")
 
-  // Burde bruke cache -> indeks
-  // I det vi treffer cache har vi funnet en sykel!
-  val part2 = (1 to 400)
-    .scanLeft(board)((b, _) => cycle(b))
-    .map(calculateLoad)
-    .zipWithIndex
-    .takeRight(40)
-  part2.foreach(println)
-
-  // Her brukte jeg penn og papir for å finne svaret herfra. Flaut, men det
-  // funket.
-  // val part2 = ???
-  // println(s"Part 2: $part2")
+  val cacheBoard = mutable.Map.empty[Vector[Vector[Char]], Int]
+  val cacheLoad = mutable.Map.empty[Int, Int]
+  var index = 0
+  var previousBoard = board
+  while (!cacheBoard.contains(previousBoard)) {
+    cacheBoard(previousBoard) = index
+    cacheLoad(index) = calculateLoad(previousBoard)
+    previousBoard = cycle(previousBoard)
+    index += 1
+  }
+  val first = cacheBoard(previousBoard)
+  val position = (1000000000 - first) % (index - first)
+  val part2 = cacheLoad(first+position)
+  println(s"Part 2: $part2")
 }
 
 private def tiltLeft(board: Vector[Vector[Char]]) = board.map(tiltVectorLeft)
 private def tiltRight(board: Vector[Vector[Char]]) = board.map(tiltVectorRight)
 
-private val cacheCycle = mutable.Map.empty[Vector[Vector[Char]], Vector[Vector[Char]]]
 private def cycle(board: Vector[Vector[Char]]) =
-  cacheCycle.getOrElseUpdate(board, cycleAux(board))
-
-private def cycleAux(board: Vector[Vector[Char]]) =
   tiltRight(
     tiltRight(
       tiltLeft(
