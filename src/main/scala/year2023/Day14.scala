@@ -28,6 +28,18 @@ def day14: Unit = {
   val position = (1000000000 - first) % (index - first)
   val part2 = cacheLoad(first+position)
   println(s"Part 2: $part2")
+
+  // LEARNING LazyList
+  // case class BoardState(board: Vector[Vector[Char]], load: Int, cycles: Int)
+  // val boardCache = mutable.Map.empty[Int, Int]
+  // val states = LazyList.iterate(BoardState(board, calculateLoad(board), 0)) { state =>
+  //   boardCache(state.board.hashCode) = state.cycles
+  //   val nextBoard = cycle(state.board)
+  //   BoardState(nextBoard, calculateLoad(nextBoard), state.cycles + 1)
+  // }
+  // states
+  //   .takeWhile { s => !boardCache.contains(s.board.hashCode) }
+  //   .foreach { s => println((s.load, s.cycles)) }
 }
 
 private def tiltLeft(board: Vector[Vector[Char]]) = board.map(tiltVectorLeft)
