@@ -12,44 +12,42 @@ def day17: Unit = {
     .map { r => r.map(_.asDigit).toVector }
   source.close()
 
-  val pathPart1 = pathWithMinimalHeatLoss(
+  val destination = (heat.size - 1, heat.size - 1)
+
+  val part1 = pathWithMinimalHeatLoss(
     heat,
-    { (rn, _) => rn < 3 }
+    { (rn, _) => rn < 3 },
+    { state => state.pos == destination }
   )
-  val part1 = pathPart1.head.distance
   println(s"Part 1: $part1")
 
-  val pathPart2 = pathWithMinimalHeatLoss(
+  val part2 = pathWithMinimalHeatLoss(
     heat,
-    { (rn, rc) => (rn == 0 && rc >= 3) || (rn > 0 && rn <= 10) }
+    { (rn, rc) => (rn == 0 && rc >= 3) || (rn > 0 && rn <= 9) },
+    { state => state.pos == destination && state.repeats >= 3 }
   )
-  val part2 = pathPart2.head.distance
   println(s"Part 2: $part2")
-  // 996 is too low
 }
 
 private def pathWithMinimalHeatLoss(
   heat: Vector[Vector[Int]],
-  rule: (Int, Int) => Boolean
+  rule: (Int, Int) => Boolean,
+  endRule: State => Boolean,
 ) = {
-  val startState = State((0, 0), 0, (0, 0), 5)
-  val work = PriorityQueue[State](startState)
   val distances = mutable.Map
     .empty[((Int, Int), (Int, Int), Int), Int]
     .withDefaultValue(Integer.MAX_VALUE)
   val directions = Vector((-1, 0), (1, 0), (0, -1), (0, 1))
-  val pathMap = mutable.Map.empty[State, State]
-  def getPath(endState: State) =
-    LazyList
-      .iterate(endState) { state => pathMap.getOrElse(state, endState) }
-      .takeWhile(pathMap.contains(_))
-      .toVector :+ startState
 
+  // val pathMap = mutable.Map.empty[State, State]
+  val startState = State((0, 0), 0, (0, 0), 5)
+  var endState: State = startState
+  val work = PriorityQueue[State](startState)
   while (!work.isEmpty) {
     val current = work.dequeue()
     val (r, c) = current.pos
 
-    directions
+    val newStates = directions
       .filterNot { (n, m) =>
         val (dr, dc) = current.direction
         dr == -n && dc == -m
@@ -69,21 +67,31 @@ private def pathWithMinimalHeatLoss(
       }
       .filter { s => rule(s.repeats, current.repeats) }
       .filter { s => s.distance < distances((s.pos, s.direction, s.repeats)) }
-      .foreach { state =>
-        distances((state.pos, state.direction, state.repeats)) = state.distance
-        pathMap(state) = current
-        work.enqueue(state)
-      }
+
+    newStates.find(endRule) match {
+      case Some(state) =>
+        endState = state
+        work.clear()
+      case None =>
+        newStates.foreach { s =>
+          distances((s.pos, s.direction, s.repeats)) = s.distance
+          work.enqueue(s)
+          // pathMap(s) = current
+        }
+    }
   }
 
-  val endStates = pathMap.keys.filter(_.pos == (heat.size - 1, heat.size - 1)).toVector
-  val endState = endStates.minBy(_.distance)
-  // pprintStates(getPath(endState), heat)
-  // println(endStates.sortBy(_.distance))
-  // getPath(endState).foreach(println)
+  // val endState = pathMap.keys.filter(endRule).toVector.minBy(_.distance)
+  // pprintStates(getPath(pathMap, endState), heat)
 
-  getPath(endState)
+  endState.distance
 }
+
+private def getPath(pathMap: mutable.Map[State, State], endState: State) =
+    LazyList
+      .iterate(endState) { state => pathMap.getOrElse(state, endState) }
+      .takeWhile(pathMap.contains(_))
+      .toVector
 
 implicit val stateOrdering: Ordering[State]
   = Ordering.by[State, Int](_.distance).reverse
