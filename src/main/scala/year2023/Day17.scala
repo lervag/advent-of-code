@@ -8,30 +8,31 @@ import scala.collection.mutable.PriorityQueue
 
 def day17: Unit = {
   val source = Source.fromFile("resources/2023/day-17")
-  val heatLoss = source.getLines.toVector
+  val heat = source.getLines.toVector
     .map { r => r.map(_.asDigit).toVector }
   source.close()
 
-  val path = pathWithMinimalHeatLoss(
-    heatLoss,
-    (0, 0),
-    (heatLoss.size - 1, heatLoss.size - 1)
+  val pathPart1 = pathWithMinimalHeatLoss(
+    heat,
+    { (rn, _) => rn < 3 }
   )
-
-  // path.foreach(println)
-  val part1 = path.head.distance
+  val part1 = pathPart1.head.distance
   println(s"Part 1: $part1")
 
-  // val part2 = "asd"
-  // println(s"Part 2: $part2")
+  val pathPart2 = pathWithMinimalHeatLoss(
+    heat,
+    { (rn, rc) => (rn == 0 && rc >= 3) || (rn > 0 && rn <= 10) }
+  )
+  val part2 = pathPart2.head.distance
+  println(s"Part 2: $part2")
+  // 996 is too low
 }
 
 private def pathWithMinimalHeatLoss(
   heat: Vector[Vector[Int]],
-  start: (Int, Int),
-  destination: (Int, Int)
+  rule: (Int, Int) => Boolean
 ) = {
-  val startState = State(start, 0, (0, 0), 0)
+  val startState = State((0, 0), 0, (0, 0), 5)
   val work = PriorityQueue[State](startState)
   val distances = mutable.Map
     .empty[((Int, Int), (Int, Int), Int), Int]
@@ -48,9 +49,6 @@ private def pathWithMinimalHeatLoss(
     val current = work.dequeue()
     val (r, c) = current.pos
 
-    // println("\nNext:")
-    // getPath(current).foreach(println)
-
     directions
       .filterNot { (n, m) =>
         val (dr, dc) = current.direction
@@ -64,15 +62,12 @@ private def pathWithMinimalHeatLoss(
 
         val i = r + n
         val j = c + m
-        if (
-          i >= 0 && i < heat.size && j >= 0 && j < heat.size
-          // && repeats < 3
-          && repeats < 3
-        )
+        if (i >= 0 && i < heat.size && j >= 0 && j < heat.size)
           Some(State((i, j), current.distance + heat(i)(j), (n, m), repeats))
         else
           None
       }
+      .filter { s => rule(s.repeats, current.repeats) }
       .filter { s => s.distance < distances((s.pos, s.direction, s.repeats)) }
       .foreach { state =>
         distances((state.pos, state.direction, state.repeats)) = state.distance
@@ -81,10 +76,11 @@ private def pathWithMinimalHeatLoss(
       }
   }
 
-  val endState = pathMap.keys.filter(_.pos == destination).minBy(_.distance)
-
+  val endStates = pathMap.keys.filter(_.pos == (heat.size - 1, heat.size - 1)).toVector
+  val endState = endStates.minBy(_.distance)
   // pprintStates(getPath(endState), heat)
-
+  // println(endStates.sortBy(_.distance))
+  // getPath(endState).foreach(println)
 
   getPath(endState)
 }
