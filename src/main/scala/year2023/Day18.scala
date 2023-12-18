@@ -24,54 +24,13 @@ def day18: Unit = {
     }
     val minI = cornersAux.map(_._1).min
     val minJ = cornersAux.map(_._2).min
-    cornersAux
-      .map { (i, j) => (i - minI, j - minJ) }
-      .sliding(2)
-      .toVector
-      .map(_ match {
-        case Vector((i0, j0), (i1, j1)) if i0 == i1 =>
-          if (j0 < j1)
-            (j0 until j1).map((i0, _))
-          else
-            (j0 until j1 by -1).map((i0, _))
-        case Vector((i0, j0), (i1, j1)) if j0 == j1 =>
-          if (i0 < i1)
-            (i0 until i1).map((_, j0))
-          else
-            (i0 until i1 by -1).map((_, j0))
-        case _ => Vector((0, 0))
-      })
-      .flatten
+    cornersAux.map { (i, j) => (i - minI, j - minJ) }
   }
 
-  val maxI = corners.map(_._1).max
-  val maxJ = corners.map(_._2).max
-  // val digarea = (0 to maxI).toVector.map { i =>
-  //   (0 to maxJ).toVector.map { j =>
-  //     if (corners.contains((i, j)))
-  //       '#'
-  //     else
-  //       '.'
-  //   }
-  // }
-  // digarea.foreach { row => println(row.mkString) }
-  val part1 = (0 to maxI).toVector.map { i =>
-    var inside = false
-    var prevEdge = false
-    (0 to maxJ).foldLeft(0) { (acc, j) =>
-      if (corners.contains((i, j)) && !prevEdge)
-        inside = !inside
-
-      prevEdge = corners.contains((i, j))
-      if (inside || corners.contains((i, j)))
-        acc + 1
-      else
-        acc
-    }
-  }.sum
+  // I want area of polygon defined by given corners
 
   // val part1 = "a"
-  println(s"Part 1: $part1")
+  // println(s"Part 1: $part1")
 
   // val part2 = "a"
   // println(s"Part 2: $part2")
