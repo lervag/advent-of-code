@@ -1,5 +1,4 @@
-val scala3Version = "3.3.1"
-
+ThisBuild / scalaVersion := "3.3.1"
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
 //enablePlugins(ScalaNativePlugin)
@@ -20,7 +19,6 @@ lazy val root = project
   .settings(
     name := "advent-of-code",
     version := "0.15.0",
-    scalaVersion := scala3Version,
     semanticdbEnabled := true,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "upickle" % "3.1.3",
