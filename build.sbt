@@ -11,6 +11,10 @@ ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports"
 //     .withGC(GC.none)
 // }
 
+// For å kunne lage en native app
+enablePlugins(NativeImagePlugin)
+
+
 // For å teste ytelse på kald JVM:
 // fork := true
 
@@ -22,5 +26,7 @@ lazy val root = project
     semanticdbEnabled := true,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "upickle" % "3.1.3"
-    )
+    ),
+    nativeImageOptions += "--no-fallback",
+    nativeImageVersion := "22.1.0"
   )
