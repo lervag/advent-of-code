@@ -37,12 +37,11 @@ def day08: Unit = {
     .filter { k => k(2) == 'A' }
     .toVector
     .map { n => getSteps(0, n) }
-    .foldLeft(BigInt(1)) { case (acc, factor) =>
-      (acc * factor) / gcd(acc, factor)
-    }
+    .foldLeft(BigInt(1)) { (acc, factor) => lcm(acc, factor) }
 
   println(s"Part 1: $part1")
   println(s"Part 2: $part2")
 }
 
-private def gcd(a: BigInt, b: BigInt): BigInt = if (b == 0) a else gcd(b, a % b)
+def gcd(a: BigInt, b: BigInt): BigInt = if (b == 0) a else gcd(b, a % b)
+def lcm(a: BigInt, b: BigInt) = (a * b) / gcd(a, b)
