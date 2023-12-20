@@ -32,10 +32,10 @@ def day16: Unit = {
   println(s"Part 2: $part2")
 }
 
-enum Direction:
+private enum Direction:
   case Left, Up, Right, Down
 
-case class Contraption(mirrors: Vector[Vector[Char]]) {
+sealed case class Contraption(mirrors: Vector[Vector[Char]]) {
   val range = 0 until mirrors.size
 
   def runLightDFS(beam: Beam) = {
@@ -97,7 +97,7 @@ case class Contraption(mirrors: Vector[Vector[Char]]) {
   }
 }
 
-class Beam(var y: Int, var x: Int, var direction: Direction) {
+sealed class Beam(var y: Int, var x: Int, var direction: Direction) {
   def position = (y, x)
 
   def split() =
@@ -119,6 +119,6 @@ class Beam(var y: Int, var x: Int, var direction: Direction) {
   }
 }
 
-object Beam {
+private object Beam {
   def apply(y: Int, x: Int, direction: Direction) = new Beam(y, x, direction)
 }
