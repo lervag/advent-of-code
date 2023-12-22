@@ -31,21 +31,24 @@ def day21(): Unit = {
   //      + (n-1)*(B1 + ... + B4)
 
   val maxSteps = 26501365L
-  val n = (maxSteps - 65) / 131
+  val width = gardenMap.size
+  val m = maxSteps % width
+  val n = (maxSteps - m) / width
+  val hw = (width - 1) / 2
   val dO = distances.values.count(_ % 2 == 0)
   val dX = distances.values.count(_ % 2 == 1)
-  val dC1 = foo(gardenMap, (130, 65), 130)
-  val dC2 = foo(gardenMap, (65, 0), 130)
-  val dC3 = foo(gardenMap, (0, 65), 130)
-  val dC4 = foo(gardenMap, (65, 130), 130)
-  val db1 = foo(gardenMap, (130, 0), 64)
-  val db2 = foo(gardenMap, (0, 0), 64)
-  val db3 = foo(gardenMap, (130, 130), 64)
-  val db4 = foo(gardenMap, (0, 130), 64)
-  val dB1 = foo(gardenMap, (130, 1), 131 + 63)
-  val dB2 = foo(gardenMap, (1, 0), 131 + 63)
-  val dB3 = foo(gardenMap, (129, 130), 131 + 63)
-  val dB4 = foo(gardenMap, (1, 130), 131 + 63)
+  val dC1 = getNGardenSpots(gardenMap, (width - 1, hw), width - 1)
+  val dC2 = getNGardenSpots(gardenMap, (hw, 0), width - 1)
+  val dC3 = getNGardenSpots(gardenMap, (0, hw), width - 1)
+  val dC4 = getNGardenSpots(gardenMap, (hw, width - 1), width - 1)
+  val db1 = getNGardenSpots(gardenMap, (width - 1, 0), hw - 1)
+  val db2 = getNGardenSpots(gardenMap, (0, 0), hw - 1)
+  val db3 = getNGardenSpots(gardenMap, (width - 1, width - 1), hw - 1)
+  val db4 = getNGardenSpots(gardenMap, (0, width - 1), hw - 1)
+  val dB1 = getNGardenSpots(gardenMap, (width - 1, 1), width + hw - 2)
+  val dB2 = getNGardenSpots(gardenMap, (1, 0), width + hw - 2)
+  val dB3 = getNGardenSpots(gardenMap, (129, width - 1), width + hw - 2)
+  val dB4 = getNGardenSpots(gardenMap, (1, width - 1), width + hw - 2)
 
   val part2 = (
     n*n*dO
@@ -54,10 +57,30 @@ def day21(): Unit = {
     + (n - 1)*(dB1 + dB2 + dB3 + dB4)
     + dC1 + dC2 + dC3 + dC4
   )
-  println(s"Part 2: $part2")
+
+    // let grid_radius = (step_count / g.width) as usize;
+    // let remainder = step_count % g.width;
+    // let sample_garden_tiles_reached = walk_garden(&g, s, (g.width * 2 + remainder) as usize + 1);
+    // // We want to create a polynomial f(n) = a * n^2 + b * n + c such that f(0) is the amount of tiles
+    // // walked to at time `remainder`, f(1) is the amount of tiles walked to at time `remainder + grid.width`,
+    // // f(2) is the amount of time walked to at `remainder + 2 * grid.width`
+    // // We can verify f(0), f(1), f(2) against `sample_garden_tiles_reached`
+    // let f_0 = sample_garden_tiles_reached[remainder as usize];
+    // let f_1 = sample_garden_tiles_reached[(remainder + g.width) as usize];
+    // let f_2 = sample_garden_tiles_reached[(remainder + 2 * g.width) as usize];
+    // // Trivially, f(0) = c
+    // let c = f_0;
+    // // Now we have f_1 = a + b + c and f_2 = a * 4 + b * 2 + c
+    // // Solve f_1 for a: a = f_1 - b - c, insert into f_2:
+    // // f_2 = 4 * (f_1 - b - c) + b * 2 + c
+    // // f_2 = 4 * f_1 - 2 * b - 3c => b = (4 * f_1 - 3c - f_2) / 2
+    // let b = (4 * f_1 - 3 * c - f_2) / 2;
+    // // f_1 = a + b + c => a = f_1 - b - c
+    // let a = f_1 - b - c;
+    // let ans = a * grid_radius * grid_radius + b * grid_radius + c; println(s"Part 2: $part2")
 }
 
-private def foo(
+private def getNGardenSpots(
     gardenMap: Vector[Vector[Char]],
     startPosition: (Int, Int),
     length: Int,
