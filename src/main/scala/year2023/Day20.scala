@@ -4,7 +4,7 @@ import scala.io.Source
 import scala.collection.mutable
 import scala.collection.mutable.Queue
 
-def day20: Unit = {
+def day20(): Unit = {
   val source = Source.fromFile("resources/2023/day-20")
   val machine = Machine.fromLines(source.getLines().toVector)
   source.close()
@@ -22,7 +22,7 @@ def day20: Unit = {
   while (cycles.values.exists(_ == 0)) {
     i += 1
     val (_, _, source) = machine.pushButton()
-    if (source.size > 0)
+    if (source.nonEmpty)
       cycles(source) = i
   }
   val part2 = cycles.values
@@ -31,11 +31,11 @@ def day20: Unit = {
 }
 
 sealed class Machine(val modules: Map[String, Module]) {
-  def pushButton() = {
+  def pushButton(): (Int, Int, String) = {
     var low = 0
     var high = 0
     var source = ""
-    val queue = Queue(Pulse(false, "button", "broadcaster"))
+    val queue = mutable.Queue(Pulse(false, "button", "broadcaster"))
     while (queue.nonEmpty) {
       val pulse = queue.dequeue()
       queue.enqueueAll(send(pulse))
@@ -49,13 +49,13 @@ sealed class Machine(val modules: Map[String, Module]) {
     (low, high, source)
   }
 
-  def send(pulse: Pulse) = modules(pulse.destination).send(pulse)
+  private def send(pulse: Pulse) = modules(pulse.destination).send(pulse)
 
-  def reset() = modules.values.foreach(_.reset())
+  def reset(): Unit = modules.values.foreach(_.reset())
 }
 
 sealed case class Pulse(value: Boolean, source: String, destination: String) {
-  override def toString() =
+  override def toString =
     s"$source ${if (value) "+>" else "->"} $destination"
 }
 
@@ -69,66 +69,66 @@ sealed abstract class Module {
 sealed case class Broadcaster(destinations: Vector[String]) extends Module {
   val name = "broadcaster"
 
-  def send(pulse: Pulse) =
+  def send(pulse: Pulse): Vector[Pulse] =
     destinations.map { d => Pulse(pulse.value, "broadcaster", d) }
 
-  override def toString() = s"$name: ${destinations.mkString(", ")}"
+  override def toString = s"$name: ${destinations.mkString(", ")}"
 }
 
 sealed case class Untyped(name: String) extends Module {
-  val destinations = Vector[String]()
+  val destinations: Vector[String] = Vector[String]()
 
-  def send(pulse: Pulse) = Vector[Pulse]()
+  def send(pulse: Pulse): Vector[Pulse] = Vector[Pulse]()
 
-  override def toString() = s"%$name UNTYPED"
+  override def toString = s"%$name UNTYPED"
 }
 
 sealed case class FlipFlop(name: String, destinations: Vector[String])
     extends Module {
   var state: Boolean = false
 
-  def send(pulse: Pulse) = {
+  def send(pulse: Pulse): Vector[Pulse] = {
     if (pulse.value) Vector[Pulse]()
     else
       state = !state
       destinations.map { d => Pulse(state, name, d) }
   }
 
-  override def reset() = state = false
+  override def reset(): Unit = state = false
 
-  override def toString() = s"%$name $state: ${destinations.mkString(", ")}"
+  override def toString = s"%$name $state: ${destinations.mkString(", ")}"
 }
 
 sealed case class Conjunction(name: String, destinations: Vector[String])
     extends Module {
-  val mostRecentPulse = mutable.Map
+  val mostRecentPulse: mutable.Map[String, Boolean] = mutable.Map
     .empty[String, Boolean]
     .withDefaultValue(false)
 
-  def send(pulse: Pulse) =
+  def send(pulse: Pulse): Vector[Pulse] =
     mostRecentPulse(pulse.source) = pulse.value
     val output = !mostRecentPulse.values.forall { p => p }
     destinations.map { d =>
       Pulse(output, name, d)
     }
 
-  override def reset() = mostRecentPulse.map { (key, value) => key -> false }
+  override def reset(): Unit = mostRecentPulse.map { (key, value) => key -> false }
 
-  override def toString() =
+  override def toString =
     s"&$name $mostRecentPulse: ${destinations.mkString(", ")}"
 }
 
 object Machine {
   def fromLines(lines: Vector[String]): Machine = {
     val modules = lines
-      .map(_ match {
+      .map {
         case s"broadcaster -> $destinations" =>
           "broadcaster" -> Broadcaster(destinations.split(", ").toVector)
         case s"%$name -> $destinations" =>
           name -> FlipFlop(name, destinations.split(", ").toVector)
         case s"&$name -> $destinations" =>
           name -> Conjunction(name, destinations.split(", ").toVector)
-      })
+      }
       .toMap
       .to(mutable.Map)
 

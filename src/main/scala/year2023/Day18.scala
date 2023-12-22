@@ -2,7 +2,7 @@ package year2023
 
 import scala.io.Source
 
-def day18: Unit = {
+def day18(): Unit = {
   val source = Source.fromFile("resources/2023/day-18")
   val spec = source.getLines.toVector
     .map { case s"$direction $length (#$rgb)" =>

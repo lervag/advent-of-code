@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Stack
 import scala.collection.mutable.PriorityQueue
 
-def day17: Unit = {
+def day17(): Unit = {
   val source = Source.fromFile("resources/2023/day-17")
   val heat = source.getLines.toVector
     .map { r => r.map(_.asDigit).toVector }
@@ -42,8 +42,8 @@ private def pathWithMinimalHeatLoss(
   // val pathMap = mutable.Map.empty[State, State]
   val startState = State((0, 0), 0, (0, 0), 5)
   var endState: State = startState
-  val work = PriorityQueue[State](startState)
-  while (!work.isEmpty) {
+  val work = mutable.PriorityQueue[State](startState)
+  while (work.nonEmpty) {
     val current = work.dequeue()
     val (r, c) = current.pos
 
@@ -90,14 +90,14 @@ private def pathWithMinimalHeatLoss(
 private def getPath(pathMap: mutable.Map[State, State], endState: State) =
     LazyList
       .iterate(endState) { state => pathMap.getOrElse(state, endState) }
-      .takeWhile(pathMap.contains(_))
+      .takeWhile(pathMap.contains)
       .toVector
 
 implicit val stateOrdering: Ordering[State]
   = Ordering.by[State, Int](_.distance).reverse
 case class State(pos: (Int, Int), distance: Int, direction: (Int, Int), repeats: Int)
 
-private def pprintStates(states: Vector[State], heatMap: Vector[Vector[Int]]) = {
+private def pprintStates(states: Vector[State], heatMap: Vector[Vector[Int]]): Unit = {
   val stateMap = states.groupBy(_.pos)
   heatMap.zipWithIndex.foreach { (row, i) =>
     val s = row.zipWithIndex.map { (cell, j) =>

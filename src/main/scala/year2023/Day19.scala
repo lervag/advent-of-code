@@ -2,7 +2,7 @@ package year2023
 
 import scala.io.Source
 
-def day19: Unit = {
+def day19(): Unit = {
   // https://adventofcode.com/2023/day/19
   val source = Source.fromFile("resources/2023/day-19")
   val lines = source.getLines().toVector
