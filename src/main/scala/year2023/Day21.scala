@@ -8,14 +8,14 @@ def day21(): Unit = {
   val gardenMap = source.getLines().toVector.map(_.toVector)
   source.close()
 
-  var t0 = System.currentTimeMillis
+  // var t0 = System.currentTimeMillis
   val startPosition = gardenMap.zipWithIndex.flatMap { (v, i) =>
     v.zipWithIndex.collect { case ('S', j) => (i, j) }
   }.head
   val part1 = findGardenSpotsFromS(gardenMap, startPosition, 64)
   println(s"Part 1: $part1")
-  var t1 = System.currentTimeMillis
-  println("Elapsed time: " + (t1 - t0) + "ms")
+  // var t1 = System.currentTimeMillis
+  // println("Elapsed time: " + (t1 - t0) + "ms")
 
   //  C1 b1
   //  O  B1 b1
@@ -34,7 +34,7 @@ def day21(): Unit = {
   val w = gardenMap.size
   val r = (w - 1) / 2
   val n = (maxSteps - r) / w
-  t0 = System.currentTimeMillis
+  // t0 = System.currentTimeMillis
   val dO = findGardenSpotsFromS(gardenMap, (0, 0), 3*w)
   val dX = findGardenSpotsFromS(gardenMap, (0, 1), 3*w)
   val dC1 = findGardenSpotsFromS(gardenMap, (w - 1, r), w)
@@ -58,24 +58,24 @@ def day21(): Unit = {
       + dC1 + dC2 + dC3 + dC4
   )
   println(s"Part 2: $part2")
-  t1 = System.currentTimeMillis
-  println("Elapsed time: " + (t1 - t0) + "ms")
+  // t1 = System.currentTimeMillis
+  // println("Elapsed time: " + (t1 - t0) + "ms")
 
   // Create a polynomial
   //
   //   f(n) = a * n^2 + b * n + c
   //
-  t0 = System.currentTimeMillis
-  val f0 = findGardenSpotsFromSInfinite(gardenMap, startPosition, r)
-  val f1 = findGardenSpotsFromSInfinite(gardenMap, startPosition, r + w)
-  val f2 = findGardenSpotsFromSInfinite(gardenMap, startPosition, r + 2 * w)
-  val c = f0
-  val b = (4 * f1 - 3 * f0 - f2) / 2
-  val a = f1 - b - c
-  val ans = a * n * n + b * n + c
-  println(s"Part 2: $ans")
-  t1 = System.currentTimeMillis
-  println("Elapsed time: " + (t1 - t0) + "ms")
+  // t0 = System.currentTimeMillis
+  // val f0 = findGardenSpotsFromSInfinite(gardenMap, startPosition, r)
+  // val f1 = findGardenSpotsFromSInfinite(gardenMap, startPosition, r + w)
+  // val f2 = findGardenSpotsFromSInfinite(gardenMap, startPosition, r + 2 * w)
+  // val c = f0
+  // val b = (4 * f1 - 3 * f0 - f2) / 2
+  // val a = f1 - b - c
+  // val ans = a * n * n + b * n + c
+  // println(s"Part 2: $ans")
+  // t1 = System.currentTimeMillis
+  // println("Elapsed time: " + (t1 - t0) + "ms")
 }
 
 private def findGardenSpotsFromS(
