@@ -11,7 +11,7 @@ import breeze.linalg.sum
 import breeze.optimize.LBFGS
 
 def day24(): Unit = {
-  val source = Source.fromFile("resources/2023/day-24")
+  val source = Source.fromFile("resources/2023/day-24a")
   val hails =
     source.getLines().toVector.map { case s"$x, $y, $z @ $u, $v, $w" =>
       Hail(
@@ -42,17 +42,15 @@ def day24(): Unit = {
   // Written out, the idea is to solve:
   //
   //   (x - h1.x) + t1 * (u - h1.u) = 0
-  //   (y - h1.y) + t1 * (v - h1.v) = 0
-  //   (z - h1.z) + t1 * (w - h1.w) = 0
   //   (x - h2.x) + t2 * (u - h2.u) = 0
-  //   (y - h2.y) + t2 * (v - h2.v) = 0
-  //   (z - h2.z) + t2 * (w - h2.w) = 0
   //   (x - h3.x) + t3 * (u - h3.u) = 0
+  //   (y - h1.y) + t1 * (v - h1.v) = 0
+  //   (y - h2.y) + t2 * (v - h2.v) = 0
   //   (y - h3.y) + t3 * (v - h3.v) = 0
+  //   (z - h1.z) + t1 * (w - h1.w) = 0
+  //   (z - h2.z) + t2 * (w - h2.w) = 0
   //   (z - h3.z) + t3 * (w - h3.w) = 0
-  //
-  val stone = newtonSolver(hails(0), hails(1), hails(2))
-  val part2 = stone.x + stone.y + stone.z
+  val part2 = iterativeSolver(hails(0), hails(1), hails(2))
   println(s"Part 2: $part2")
 }
 
@@ -91,6 +89,86 @@ private def intersection(h1: Hail, h2: Hail): Option[(Double, Double)] = {
         None
       else
         Some((h1.x + dt * h1.u, h1.y + dt * h1.v))
+}
+
+private def iterativeSolver(h1: Hail, h2: Hail, h3: Hail) = {
+  // Written out, the idea is to solve:
+  //
+  //   (x - h1.x) + t1 * (u - h1.u) = 0
+  //   (x - h2.x) + t2 * (u - h2.u) = 0
+  //   (x - h3.x) + t3 * (u - h3.u) = 0
+  //   (y - h1.y) + t1 * (v - h1.v) = 0
+  //   (y - h2.y) + t2 * (v - h2.v) = 0
+  //   (y - h3.y) + t3 * (v - h3.v) = 0
+  //   (z - h1.z) + t1 * (w - h1.w) = 0
+  //   (z - h2.z) + t2 * (w - h2.w) = 0
+  //   (z - h3.z) + t3 * (w - h3.w) = 0
+  //
+  // Given a guess of x, y, z, u, v, w we find:
+  //
+  //   t1 = (u - h1.u)/(x - h1.x)
+  //   t2 = (u - h2.u)/(x - h2.x)
+  //   t3 = (u - h3.u)/(x - h3.x)
+  //
+  // We can take the mean t1, t2, t3. Now we find an updated guess, and we
+  // rince and repeat.
+  var x = 1000
+  var y = 200
+  var z = 30
+  var u = 10
+  var v = 20
+  var w = 30
+  var iter = 0
+  val tol = 1e-6
+  val maxIterations = 100
+  var converged = false
+  while (iter < maxIterations && !converged) {
+    val t1 = 0.333333333*(
+        (u - h1.u) / (x - h1.x)
+      + (v - h1.v) / (y - h1.y)
+      + (w - h1.w) / (z - h1.z)
+    )
+    val t2 = 0.333333333*(
+        (u - h2.u) / (x - h2.x)
+      + (v - h2.v) / (y - h2.y)
+      + (w - h2.w) / (z - h2.z)
+    )
+    val t3 = 0.333333333*(
+        (u - h3.u) / (x - h3.x)
+      + (v - h3.v) / (y - h3.y)
+      + (w - h3.w) / (z - h3.z)
+    )
+
+    u = (((h1.x - h2.x) + t1 * h1.u - t2 * h2.u)/(t1 - t2)).toInt
+    x = (h1.x - t1 * (u - h1.u)).toInt
+
+    v = (((h2.y - h3.y) + t2 * h2.v - t3 * h3.v)/(t2 - t3)).toInt
+    y = (h2.y - t2 * (v - h2.v)).toInt
+
+    w = (((h3.z - h1.z) + t3 * h3.w - t1 * h1.w)/(t3 - t1)).toInt
+    z = (h3.z - t3 * (w - h3.w)).toInt
+
+    val res = Vector(
+       (x - h1.x) + t1 * (u - h1.u),
+       (x - h2.x) + t2 * (u - h2.u),
+       (x - h3.x) + t3 * (u - h3.u),
+       (y - h1.y) + t1 * (v - h1.v),
+       (y - h2.y) + t2 * (v - h2.v),
+       (y - h3.y) + t3 * (v - h3.v),
+       (z - h1.z) + t1 * (w - h1.w),
+       (z - h2.z) + t2 * (w - h2.w),
+       (z - h3.z) + t3 * (w - h3.w)
+     ).map { r => 0.5*r*r }.sum
+
+    println(res)
+
+    // if (delta < tol) {
+    //   converged = true
+    // }
+    iter += 1
+  }
+
+  x + y + z
 }
 
 private def newtonSolver(h1: Hail, h2: Hail, h3: Hail) = {
