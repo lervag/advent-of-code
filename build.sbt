@@ -25,7 +25,9 @@ lazy val root = project
     version := "0.15.0",
     semanticdbEnabled := true,
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "upickle" % "3.1.3"
+      "com.lihaoyi" %% "upickle" % "3.1.3",
+      "org.scalanlp" %% "breeze" % "2.1.0",
+      "org.scalanlp" %% "breeze-viz" % "2.1.0"
     ),
     nativeImageOptions += "--no-fallback",
     nativeImageVersion := "22.1.0"
