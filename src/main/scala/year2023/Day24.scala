@@ -4,7 +4,7 @@ import scala.io.Source
 import scala.collection.mutable
 
 def day24(): Unit = {
-  val source = Source.fromFile("resources/2023/day-24a")
+  val source = Source.fromFile("resources/2023/day-24")
   val hails =
     source.getLines().toVector.map { case s"$x, $y, $z @ $u, $v, $w" =>
       Hail(
@@ -18,22 +18,15 @@ def day24(): Unit = {
     }
   source.close()
 
-  // val part1 = findIntersectionsInRegion(
-  //   hails,
-  //   200000000000000.0,
-  //   400000000000000.0
-  // )
-  // println(s"Part 1: $part1")
+  val part1 = findIntersectionsInRegion(
+    hails,
+    200000000000000.0,
+    400000000000000.0
+  )
+  println(s"Part 1: $part1")
 
-  hails
-    .combinations(3)
-    .foreach { hh =>
-      val y = newtonSolver(hh(0), hh(1), hh(2))
-      println(y)
-    }
-    // .foreach(println)
-  // val part2 = newtonSolver(hails(0), hails(1), hails(2))
-  // println(s"Part 2: $part2")
+  val part2 = newtonSolver(hails(0), hails(1), hails(2), hails(3))
+  println(s"Part 2: $part2")
 }
 
 sealed case class Hail(
@@ -73,19 +66,28 @@ private def intersection(h1: Hail, h2: Hail): Option[(Double, Double)] = {
         Some((h1.x + t1 * h1.u, h1.y + t1 * h1.v))
 }
 
-private def newtonSolver(h1: Hail, h2: Hail, h3: Hail) = {
+private def newtonSolver(h1: Hail, h2: Hail, h3: Hail, h4: Hail) = {
   import breeze.linalg._
   val matrixA = DenseMatrix(
-    ((h1.v - h2.v), (h2.u - h1.u),     0L    , (h2.y - h1.y), (h1.x - h2.x),     0L    ),
-    ((h1.v - h3.v), (h3.u - h1.u),     0L    , (h3.y - h1.y), (h1.x - h3.x),     0L    ),
-    ((h2.v - h3.v), (h3.u - h2.u),     0L    , (h3.y - h2.y), (h2.x - h3.x),     0L    ),
-    ((h1.w - h2.w),     0L    , (h2.u - h1.u), (h2.z - h1.z),     0L    , (h1.x - h2.x)),
-    ((h1.w - h3.w),     0L    , (h3.u - h1.u), (h3.z - h1.z),     0L    , (h1.x - h3.x)),
-    ((h2.w - h3.w),     0L    , (h3.u - h2.u), (h3.z - h2.z),     0L    , (h2.x - h3.x))
+    ((h2.v - h1.v), (h1.u - h2.u),     0L    , (h1.y - h2.y), (h2.x - h1.x),     0L    ),
+    ((h3.v - h1.v), (h1.u - h3.u),     0L    , (h1.y - h3.y), (h3.x - h1.x),     0L    ),
+    ((h4.v - h1.v), (h1.u - h4.u),     0L    , (h1.y - h4.y), (h4.x - h1.x),     0L    ),
+    ((h2.w - h1.w),     0L    , (h1.u - h2.u), (h1.z - h2.z),     0L    , (h2.x - h1.x)),
+    ((h3.w - h1.w),     0L    , (h1.u - h3.u), (h1.z - h3.z),     0L    , (h3.x - h1.x)),
+    ((h4.w - h1.w),     0L    , (h1.u - h4.u), (h1.z - h4.z),     0L    , (h4.x - h1.x)),
   )
 
-  val x = matrixA.mapValues { v => v.toDouble }
-  rank(x)
+  val b = DenseVector(
+    h1.u*h1.y - h1.x*h1.v - h2.u*h2.y + h2.x*h2.v,
+    h1.u*h1.y - h1.x*h1.v - h3.u*h3.y + h3.x*h3.v,
+    h1.u*h1.y - h1.x*h1.v - h4.u*h4.y + h4.x*h4.v,
+    h1.u*h1.z - h1.x*h1.w - h2.u*h2.z + h2.x*h2.w,
+    h1.u*h1.z - h1.x*h1.w - h3.u*h3.z + h3.x*h3.w,
+    h1.u*h1.z - h1.x*h1.w - h4.u*h4.z + h4.x*h4.w
+  )
+
+  val x = inv(matrixA) * b.mapValues(_.toDouble)
+  x(0).toLong + x(1).toLong + x(2).toLong + 1
 }
 
 // Find stone (represented as a hail) H such that
@@ -117,28 +119,20 @@ private def newtonSolver(h1: Hail, h2: Hail, h3: Hail) = {
 //
 // Or:
 //
-//   v1 x - u1 y - y1 u + x1 v + y u - x v + u1 y1 - x1 v1 = 0
-//   v2 x - u2 y - y2 u + x2 v + y u - x v + u2 y2 - x2 v2 = 0
-//   v3 x - u3 y - y3 u + x3 v + y u - x v + u3 y3 - x3 v3 = 0
-//   w1 x - u1 z - z1 u + x1 w + z u - x w + u1 z1 - x1 w1 = 0
-//   w2 x - u2 z - z2 u + x2 w + z u - x w + u2 z2 - x2 w2 = 0
-//   w3 x - u3 z - z3 u + x3 w + z u - x w + u3 z3 - x3 w3 = 0
+//   v1 x - u1 y - y1 u + x1 v + u1 y1 - x1 v1 = x v - y u
+//   v2 x - u2 y - y2 u + x2 v + u2 y2 - x2 v2 = x v - y u
+//   v3 x - u3 y - y3 u + x3 v + u3 y3 - x3 v3 = x v - y u
+//   w1 x - u1 z - z1 u + x1 w + u1 z1 - x1 w1 = x w - z u
+//   w2 x - u2 z - z2 u + x2 w + u2 z2 - x2 w2 = x w - z u
+//   w3 x - u3 z - z3 u + x3 w + u3 z3 - x3 w3 = x w - z u
 //
-// Subtract equations to make them linear:
+// The right-hand side has nonlinear terms. We can use that and add a hail to
+// get 6 linear equations:
 //
-//   (v1 - v2) x + (u2 - u1) y + (y2 - y1) u + (x1 - x2) v = x1 v1 - x2 v2 + u2 y2 - u1 y1
-//   (v2 - v3) x + (u3 - u2) y + (y3 - y2) u + (x2 - x3) v = x2 v2 - x3 v3 + u3 y3 - u2 y2
-//   (v3 - v1) x + (u1 - u3) y + (y1 - y3) u + (x3 - x1) v = x1 v1 - x3 v3 + u3 y3 - u1 y1
-//   (w1 - w2) x + (u2 - u1) z + (z2 - z1) u + (x1 - x2) w = x1 w1 - x2 w2 + u2 z2 - u1 z1
-//   (w1 - w3) x + (u3 - u1) z + (z3 - z1) u + (x1 - x3) w = x1 w1 - x3 w3 + u3 z3 - u1 z1
-//   (w2 - w3) x + (u3 - u2) z + (z3 - z2) u + (x2 - x3) w = x2 w2 - x3 w3 + u3 z3 - u2 z2
-//
-// These are now 6 linear equations with 6 variables x, y, z, u, v, w. Thus:
-//
-// [ (v1 - v2) (u2 - u1)     0     (y2 - y1) (x1 - x2)     0     ] [x]   [ x1 v1 - x2 v2 + u2 y2 - u1 y1 ]
-// | (v1 - v3) (u3 - u1)     0     (y3 - y1) (x1 - x3)     0     | |y|   | x1 v1 - x3 v3 + u3 y3 - u1 y1 |
-// | (v2 - v3) (u3 - u2)     0     (y3 - y2) (x2 - x3)     0     | |z|   | x2 v2 - x3 v3 + u3 y3 - u2 y2 |
-// | (w1 - w2)     0     (u2 - u1) (z2 - z1)     0     (x1 - x2) | |u| = | x1 w1 - x2 w2 + u2 z2 - u1 z1 |
-// | (w1 - w3)     0     (u3 - u1) (z3 - z1)     0     (x1 - x3) | |v|   | x1 w1 - x2 w2 + u2 z2 - u1 z1 |
-// [ (w2 - w3)     0     (u3 - u2) (z3 - z2)     0     (x2 - x3) ] [w]   [ x2 w2 - x3 w3 + u3 z3 - u2 z2 ]
+//   (v2 - v1) x + (u1 - u2) y + (y1 - y2) u + (x2 - x1) v = u1 y1 - x1 v1 - u2 y2 + x2 v2
+//   (v3 - v1) x + (u1 - u3) y + (y1 - y3) u + (x3 - x1) v = u1 y1 - x1 v1 - u3 y3 + x3 v3
+//   (v4 - v1) x + (u1 - u4) y + (y1 - y4) u + (x4 - x1) v = u1 y1 - x1 v1 - u4 y4 + x4 v4
+//   (w2 - w1) x + (u1 - u2) z + (z1 - z2) u + (x2 - x1) w = u1 z1 - x1 w1 - u2 z2 + x2 w2
+//   (w3 - w1) x + (u1 - u3) z + (z1 - z3) u + (x3 - x1) w = u1 z1 - x1 w1 - u3 z3 + x3 w3
+//   (w4 - w1) x + (u1 - u4) z + (z1 - z4) u + (x4 - x1) w = u1 z1 - x1 w1 - u4 z4 + x4 w4
 //
