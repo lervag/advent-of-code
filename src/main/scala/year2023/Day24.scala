@@ -68,51 +68,21 @@ private def intersection(h1: Hail, h2: Hail): Option[(Double, Double)] = {
 
 private def newtonSolver(h1: Hail, h2: Hail, h3: Hail) = {
   import breeze.linalg._
-  def F(
-      x: DenseVector[Long],
-      h1: Hail,
-      h2: Hail,
-      h3: Hail
-  ) = DenseVector(
-    (h1.v - h2.v)*x(0) + (h2.u - h1.u)*x(1) + (h2.y - h1.y)*x(3) - (h2.x - h1.x)*x(4) + h1.u*h1.y - h1.x*h1.v - h2.u*h2.y + h2.x*h2.v,
-    (h1.v - h3.v)*x(0) + (h3.u - h1.u)*x(1) + (h3.y - h1.y)*x(3) - (h3.x - h1.x)*x(4) + h1.u*h1.y - h1.x*h1.v - h3.u*h3.y + h3.x*h3.v,
-    (h2.v - h3.v)*x(0) + (h3.u - h2.u)*x(1) + (h3.y - h2.y)*x(3) - (h3.x - h2.x)*x(4) + h2.u*h2.y - h2.x*h2.v - h3.u*h3.y + h3.x*h3.v,
-    (h1.w - h2.w)*x(0) + (h2.u - h1.u)*x(2) + (h2.z - h1.z)*x(3) - (h2.x - h1.x)*x(5) + h1.u*h1.z - h1.x*h1.w - h2.u*h2.z + h2.x*h2.w,
-    (h1.w - h3.w)*x(0) + (h3.u - h1.u)*x(2) + (h3.z - h1.z)*x(3) - (h3.x - h1.x)*x(5) + h1.u*h1.z - h1.x*h1.w - h3.u*h3.z + h3.x*h3.w,
-    (h2.w - h3.w)*x(0) + (h3.u - h2.u)*x(2) + (h3.z - h2.z)*x(3) - (h3.x - h2.x)*x(5) + h2.u*h2.z - h2.x*h2.w - h3.u*h3.z + h3.x*h3.w
+  // Ax = b
+  val matrixA = DenseMatrix(
+    ((h1.v - h2.v), (h2.u - h1.u),     0L    , (h2.y - h1.y), (h1.x - h2.x),     0L    ),
+    ((h1.v - h3.v), (h3.u - h1.u),     0L    , (h3.y - h1.y), (h1.x - h3.x),     0L    ),
+    ((h2.v - h3.v), (h3.u - h2.u),     0L    , (h3.y - h2.y), (h2.x - h3.x),     0L    ),
+    ((h1.w - h2.w),     0L    , (h2.u - h1.u), (h2.z - h1.z),     0L    , (h1.x - h2.x)),
+    ((h1.w - h3.w),     0L    , (h3.u - h1.u), (h3.z - h1.z),     0L    , (h1.x - h3.x)),
+    ((h2.w - h3.w),     0L    , (h3.u - h2.u), (h3.z - h2.z),     0L    , (h2.x - h3.x))
   )
 
-  val jacobian = DenseMatrix(
-    ((h1.v - h2.v), (h1.v - h3.v), (h2.v - h3.v), (h1.w - h2.w), (h1.w - h3.w), (h2.w - h3.w)),
-    ((h2.u - h1.u), (h3.u - h1.u), (h3.u - h2.u), 0L, 0L, 0L),
-    (0L, 0L, 0L, (h2.u - h1.u), (h3.u - h1.u), (h3.u - h2.u)),
-    ((h2.y - h1.y), (h3.y - h1.y), (h3.y - h2.y), (h2.z - h1.z), (h3.z - h1.z), (h3.z - h2.z)),
-    ((h2.x - h1.x), (h3.x - h1.x), (h3.x - h2.x), 0L, 0L, 0L),
-    (0L, 0L, 0L, (h2.x - h1.x), (h3.x - h1.x), (h3.x - h2.x))
-  ).t
+  println(matrixA)
+  val x = matrixA.mapValues { v => v.toDouble }
+  println(x)
+  println(rank(x))
 
-  var x = DenseVector(24L, 13L, 10L, -3L, 1L, 2L)
-
-//   println(jacobian)
-//   println(rank(jacobian))
-  val invJ = -inv(jacobian)
-//   println(invJ)
-
-  var converged = false
-  var iter = 0
-  while (iter < 10 && !converged) {
-    val Fx = F(x, h1, h2, h3)
-    val delta = invJ * Fx
-    // println(Fx)
-    println(norm(delta))
-    x += delta
-    if (norm(delta) < 1e-6) {
-      converged = true
-    }
-    iter += 1
-  }
-
-  // println(x)
   h1
 }
 
@@ -125,15 +95,15 @@ private def newtonSolver(h1: Hail, h2: Hail, h3: Hail) = {
 //
 // Written out, the idea is to solve:
 //
-//   (x - h1.x) + t1 * (u - h1.u) = 0
-//   (y - h1.y) + t1 * (v - h1.v) = 0
-//   (z - h1.z) + t1 * (w - h1.w) = 0
-//   (x - h2.x) + t2 * (u - h2.u) = 0
-//   (y - h2.y) + t2 * (v - h2.v) = 0
-//   (z - h2.z) + t2 * (w - h2.w) = 0
-//   (x - h3.x) + t3 * (u - h3.u) = 0
-//   (y - h3.y) + t3 * (v - h3.v) = 0
-//   (z - h3.z) + t3 * (w - h3.w) = 0
+//   (x - x1) + t1 * (u - u1) = 0
+//   (y - y1) + t1 * (v - v1) = 0
+//   (z - z1) + t1 * (w - w1) = 0
+//   (x - x2) + t2 * (u - u2) = 0
+//   (y - y2) + t2 * (v - v2) = 0
+//   (z - z2) + t2 * (w - w2) = 0
+//   (x - x3) + t3 * (u - u3) = 0
+//   (y - y3) + t3 * (v - v3) = 0
+//   (z - z3) + t3 * (w - w3) = 0
 //
 // Start by removing t1, t2 and t3:
 //
@@ -155,11 +125,19 @@ private def newtonSolver(h1: Hail, h2: Hail, h3: Hail) = {
 //
 // Subtract equations to make them linear:
 //
-//   (v1 - v2) x + (u2 - u1) y + (y2 - y1) u - (x2 - x1) v + u1 y1 - x1 v1 - u2 y2 + x2 v2 = 0
-//   (v1 - v3) x + (u3 - u1) y + (y3 - y1) u - (x3 - x1) v + u1 y1 - x1 v1 - u3 y3 + x3 v3 = 0
-//   (v2 - v3) x + (u3 - u2) y + (y3 - y2) u - (x3 - x2) v + u2 y2 - x2 v2 - u3 y3 + x3 v3 = 0
-//   (w1 - w2) x + (u2 - u1) z + (z2 - z1) u - (x2 - x1) w + u1 z1 - x1 w1 - u2 z2 + x2 w2 = 0
-//   (w1 - w3) x + (u3 - u1) z + (z3 - z1) u - (x3 - x1) w + u1 z1 - x1 w1 - u3 z3 + x3 w3 = 0
-//   (w2 - w3) x + (u3 - u2) z + (z3 - z2) u - (x3 - x2) w + u2 z2 - x2 w2 - u3 z3 + x3 w3 = 0
+//   (v1 - v2) x + (u2 - u1) y + (y2 - y1) u + (x1 - x2) v = x1 v1 - x2 v2 + u2 y2 - u1 y1
+//   (v1 - v3) x + (u3 - u1) y + (y3 - y1) u + (x1 - x3) v = x1 v1 - x3 v3 + u3 y3 - u1 y1
+//   (v2 - v3) x + (u3 - u2) y + (y3 - y2) u + (x2 - x3) v = x2 v2 - x3 v3 + u3 y3 - u2 y2
+//   (w1 - w2) x + (u2 - u1) z + (z2 - z1) u + (x1 - x2) w = x1 w1 - x2 w2 + u2 z2 - u1 z1
+//   (w1 - w3) x + (u3 - u1) z + (z3 - z1) u + (x1 - x3) w = x1 w1 - x3 w3 + u3 z3 - u1 z1
+//   (w2 - w3) x + (u3 - u2) z + (z3 - z2) u + (x2 - x3) w = x2 w2 - x3 w3 + u3 z3 - u2 z2
 //
-// These are now 6 linear equations with 6 variables x, y, z, u, v, w.
+// These are now 6 linear equations with 6 variables x, y, z, u, v, w. Thus:
+//
+// [ (v1 - v2) (u2 - u1)     0     (y2 - y1) (x1 - x2)     0     ] [x]   [ x1 v1 - x2 v2 + u2 y2 - u1 y1 ]
+// | (v1 - v3) (u3 - u1)     0     (y3 - y1) (x1 - x3)     0     | |y|   | x1 v1 - x3 v3 + u3 y3 - u1 y1 |
+// | (v2 - v3) (u3 - u2)     0     (y3 - y2) (x2 - x3)     0     | |z|   | x2 v2 - x3 v3 + u3 y3 - u2 y2 |
+// | (w1 - w2)     0     (u2 - u1) (z2 - z1)     0     (x1 - x2) | |u| = | x1 w1 - x2 w2 + u2 z2 - u1 z1 |
+// | (w1 - w3)     0     (u3 - u1) (z3 - z1)     0     (x1 - x3) | |v|   | x1 w1 - x2 w2 + u2 z2 - u1 z1 |
+// [ (w2 - w3)     0     (u3 - u2) (z3 - z2)     0     (x2 - x3) ] [w]   [ x2 w2 - x3 w3 + u3 z3 - u2 z2 ]
+//
