@@ -15,14 +15,14 @@ def day19(): Unit = {
     .filter(_.nonEmpty)
   source.close()
 
-  val workflows = parseWorkflows(separatedLines(0)).toMap
+  val workflowMap = parseWorkflows(separatedLines(0)).toMap
   val parts = parseParts(separatedLines(1))
 
   val part1 = parts.flatMap { part =>
     var workflow = "in"
     while (workflow.size > 1) {
-      workflow = workflows(workflow)
-        .collectFirst { case (wf, box) if wf(part) => box }
+      workflow = workflowMap(workflow)
+        .collectFirst { case wf if wf.checkPart(part) => wf.target }
         .getOrElse("")
     }
     if (workflow == "A")
@@ -32,42 +32,40 @@ def day19(): Unit = {
   }.sum
   println(s"Part 1: $part1")
 
-  val workflows2 = parseWorkflowsRanged(separatedLines(0)).toMap
-  val part2 = runWorkflowsWithRanges(workflows2)
+  val part2 = runWorkflowsWithRanges(workflowMap)
   println(s"Part 2: $part2")
 }
 
-private def runWorkflowsWithRanges(workflows: Map[String, Vector[PartMapper => Vector[PartMapper]]]) = {
-  val finished = mutable.ArrayBuffer.empty[PartMapper]
-  val other = mutable.ArrayBuffer.empty[PartMapper]
-  val work = mutable.Queue(PartMapper(
-    (1 to 4000),
-    (1 to 4000),
-    (1 to 4000),
-    (1 to 4000),
+private def runWorkflowsWithRanges(workflowMap: Map[String, Vector[Workflow]]) = {
+  val finished = mutable.ArrayBuffer.empty[RangedPart]
+  val work = mutable.Queue(RangedPart(
+    mutable.Map(
+      "x" -> (1 to 4000),
+      "m" -> (1 to 4000),
+      "a" -> (1 to 4000),
+      "s" -> (1 to 4000)
+    ),
     "in"
   ))
 
   while (work.nonEmpty) {
     val current = work.dequeue
-    val currentWf = current.wf
 
-    if (currentWf == "A")
-      // println(s"Added $current")
+    if (current.wf == "A")
       finished += current
-    else if (currentWf == "R")
-      // println(s"Ignored $current")
-      other += current
-    else
-      // println(s"Running: $currentWf with $current")
-      workflows(currentWf).foldLeft(current) { (pp, g) =>
-        val newParts = g(pp).filterNot(_.isEmpty)
-
-        newParts.find(_.wf != currentWf) map { n => work.enqueue(n) }
-
-        newParts.find(_.wf == currentWf) match {
-          case Some(next) => next
-          case None => pp
+    else if (current.wf != "R")
+      workflowMap(current.wf).foldLeft(current) { (c, workflow) =>
+        workflow.handleRangedPart(c) match {
+          case (lower, higher) if lower.wf == current.wf =>
+            work.enqueue(higher)
+            lower
+          case (lower, higher) =>
+            work.enqueue(lower)
+            higher
+          case single: RangedPart =>
+            if (single.wf != current.wf)
+              work.enqueue(single)
+            single
         }
       }
   }
@@ -76,49 +74,13 @@ private def runWorkflowsWithRanges(workflows: Map[String, Vector[PartMapper => V
 }
 
 private def parseWorkflows(lines: Vector[String]) =
-  lines.map { case s"$name{$rules}" => name -> rules.split(",").toVector.map(_ match {
-    case s"$category<$number:$box" => ({ (p: Part) => p.extract(category) < number.toInt }, box)
-    case s"$category>$number:$box" => ({ (p: Part) => p.extract(category) > number.toInt }, box)
-    case s"$box" => ({ (p: Part) => true }, box)
-  })
-  }
-
-private def parseWorkflowsRanged(lines: Vector[String]) =
-  lines.map { case s"$name{$rules}" => name -> rules.split(",").toVector.map(_ match {
-    case s"x>$number:$box" => { (p: PartMapper) =>
-      val (lower, upper) = p.x.splitAt(number.toInt)
-      Vector(p.copy(x = lower), p.copy(x = upper, wf = box))
-    }
-    case s"x<$number:$box" => { (p: PartMapper) =>
-      val (lower, upper) = p.x.splitAt(number.toInt - 1)
-      Vector(p.copy(x = lower, wf = box), p.copy(x = upper))
-    }
-    case s"m>$number:$box" => { (p: PartMapper) =>
-      val (lower, upper) = p.m.splitAt(number.toInt)
-      Vector(p.copy(m = lower), p.copy(m = upper, wf = box))
-    }
-    case s"m<$number:$box" => { (p: PartMapper) =>
-      val (lower, upper) = p.m.splitAt(number.toInt - 1)
-      Vector(p.copy(m = lower, wf = box), p.copy(m = upper))
-    }
-    case s"a>$number:$box" => { (p: PartMapper) =>
-      val (lower, upper) = p.a.splitAt(number.toInt)
-      Vector(p.copy(a = lower), p.copy(a = upper, wf = box))
-    }
-    case s"a<$number:$box" => { (p: PartMapper) =>
-      val (lower, upper) = p.a.splitAt(number.toInt - 1)
-      Vector(p.copy(a = lower, wf = box), p.copy(a = upper))
-    }
-    case s"s>$number:$box" => { (p: PartMapper) =>
-      val (lower, upper) = p.s.splitAt(number.toInt)
-      Vector(p.copy(s = lower), p.copy(s = upper, wf = box))
-    }
-    case s"s<$number:$box" => { (p: PartMapper) =>
-      val (lower, upper) = p.s.splitAt(number.toInt - 1)
-      Vector(p.copy(s = lower, wf = box), p.copy(s = upper))
-    }
-    case s"$box" => { (p: PartMapper) => Vector(p.copy(wf = box)) }
-  })
+  lines.map { case s"$name{$rules}" =>
+    val workflows = rules.split(",").toVector.map(_ match {
+      case s"$category<$number:$box" => WorkflowLT(box, category, number.toInt)
+      case s"$category>$number:$box" => WorkflowGT(box, category, number.toInt)
+      case s"$box"                   => WorkflowSimple(box)
+    })
+    name -> workflows
   }
 
 private def parseParts(lines: Vector[String]) =
@@ -135,7 +97,61 @@ case class Part(x: Int, m: Int, a: Int, s: Int) {
   def sum = x + m + a + s
 }
 
-case class PartMapper(x: Range, m: Range, a: Range, s: Range, wf: String) {
-  def combinations = x.size.toLong * m.size.toLong * a.size.toLong * s.size.toLong
-  def isEmpty = x.isEmpty || m.isEmpty || a.isEmpty || s.isEmpty
+case class RangedPart(ratings: mutable.Map[String, Range], wf: String) {
+  def combinations = ratings.values.map(_.size.toLong).reduce(_*_)
+  def isEmpty = ratings.values.forall(_.isEmpty)
+}
+
+trait Workflow {
+  val target: String
+  def checkPart(part: Part): Boolean = true
+  def handleRangedPart(part: RangedPart): RangedPart | (RangedPart, RangedPart) = part.copy(wf = target)
+}
+
+case class WorkflowSimple(target: String) extends Workflow
+
+case class WorkflowGT(target: String, category: String, threshold: Int) extends Workflow {
+  override def checkPart(part: Part): Boolean = part.extract(category) > threshold
+
+  override def handleRangedPart(part: RangedPart): RangedPart | (RangedPart, RangedPart) = {
+    val range = part.ratings(category)
+    val splitPos = threshold - range.start + 1
+    val (lower, upper) = range.splitAt(splitPos)
+
+    val partLower = part.copy(ratings = part.ratings.clone())
+    partLower.ratings(category) = lower
+
+    val partHigher = part.copy(wf = target, ratings = part.ratings.clone())
+    partHigher.ratings(category) = upper
+
+    if (partLower.isEmpty)
+      partHigher
+    else if (partHigher.isEmpty)
+      partLower
+    else
+      (partLower, partHigher)
+  }
+}
+
+case class WorkflowLT(target: String, category: String, threshold: Int) extends Workflow {
+  override def checkPart(part: Part): Boolean = part.extract(category) < threshold
+
+  override def handleRangedPart(part: RangedPart): RangedPart | (RangedPart, RangedPart) = {
+    val range = part.ratings(category)
+    val splitPos = threshold - range.start
+    val (lower, upper) = range.splitAt(splitPos)
+
+    val partLower = part.copy(wf = target, ratings = part.ratings.clone())
+    partLower.ratings(category) = lower
+
+    val partHigher = part.copy(ratings = part.ratings.clone())
+    partHigher.ratings(category) = upper
+
+    if (partLower.isEmpty)
+      partHigher
+    else if (partHigher.isEmpty)
+      partLower
+    else
+      (partLower, partHigher)
+  }
 }
