@@ -8,6 +8,8 @@ def day25(): Unit = {
   val lines = source.getLines().toVector
   source.close()
 
+  // https://en.wikipedia.org/wiki/Minimum_cut
+  // https://en.wikipedia.org/wiki/Karger%27s_algorithm
   val connections = linesToConnections(lines)
   connections.foreach(println)
   // val part1 = ???
