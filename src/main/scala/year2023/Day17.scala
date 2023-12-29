@@ -30,9 +30,9 @@ def day17(): Unit = {
 }
 
 private def pathWithMinimalHeatLoss(
-  heat: Vector[Vector[Int]],
-  rule: (Int, Int) => Boolean,
-  endRule: State => Boolean,
+    heat: Vector[Vector[Int]],
+    rule: (Int, Int) => Boolean,
+    endRule: State => Boolean
 ) = {
   val distances = mutable.Map
     .empty[((Int, Int), (Int, Int), Int), Int]
@@ -42,6 +42,8 @@ private def pathWithMinimalHeatLoss(
   // val pathMap = mutable.Map.empty[State, State]
   val startState = State((0, 0), 0, (0, 0), 5)
   var endState: State = startState
+  implicit val stateOrdering: Ordering[State] =
+    Ordering.by[State, Int](_.distance).reverse
   val work = mutable.PriorityQueue[State](startState)
   while (work.nonEmpty) {
     val current = work.dequeue()
@@ -53,10 +55,11 @@ private def pathWithMinimalHeatLoss(
         dr == -n && dc == -m
       }
       .flatMap { (n, m) =>
-        val repeats = if (current.direction == (n, m))
-          current.repeats + 1
-        else
-          0
+        val repeats =
+          if (current.direction == (n, m))
+            current.repeats + 1
+          else
+            0
 
         val i = r + n
         val j = c + m
@@ -88,16 +91,22 @@ private def pathWithMinimalHeatLoss(
 }
 
 private def getPath(pathMap: mutable.Map[State, State], endState: State) =
-    LazyList
-      .iterate(endState) { state => pathMap.getOrElse(state, endState) }
-      .takeWhile(pathMap.contains)
-      .toVector
+  LazyList
+    .iterate(endState) { state => pathMap.getOrElse(state, endState) }
+    .takeWhile(pathMap.contains)
+    .toVector
 
-implicit val stateOrdering: Ordering[State]
-  = Ordering.by[State, Int](_.distance).reverse
-case class State(pos: (Int, Int), distance: Int, direction: (Int, Int), repeats: Int)
+sealed case class State(
+    pos: (Int, Int),
+    distance: Int,
+    direction: (Int, Int),
+    repeats: Int
+)
 
-private def pprintStates(states: Vector[State], heatMap: Vector[Vector[Int]]): Unit = {
+private def pprintStates(
+    states: Vector[State],
+    heatMap: Vector[Vector[Int]]
+): Unit = {
   val stateMap = states.groupBy(_.pos)
   heatMap.zipWithIndex.foreach { (row, i) =>
     val s = row.zipWithIndex.map { (cell, j) =>
