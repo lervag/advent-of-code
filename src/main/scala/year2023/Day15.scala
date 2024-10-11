@@ -18,6 +18,7 @@ def day15: Unit = {
       case _            => None
     }
     .groupBy(_._1)
+    .view
     .mapValues(_.foldLeft(LinkedHashMap.empty[String, Int]) {
       case (acc, (_, label, n)) =>
         if (n == 0) acc - label

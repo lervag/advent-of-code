@@ -3,6 +3,5 @@ metals.sbt
 .bsp
 .metals
 .idea
-project
 
 *.sc

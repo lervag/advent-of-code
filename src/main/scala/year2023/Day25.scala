@@ -20,7 +20,7 @@ private def findWires(graph: Map[String, Vector[String]]) = {
   var sizes = 0
   var wires = 4
   while (wires > 3) {
-    val contractedGraph = contractGraph(mutable.Map(graph.toSeq: _*))
+    val contractedGraph = contractGraph(mutable.Map(graph.toSeq*))
     val groups = contractedGraph.keys.toVector
     wires = contractedGraph(groups(0)).size
 
@@ -81,5 +81,5 @@ private def linesToGraph(lines: Vector[String]): Map[String, Vector[String]] = {
     }
   }
 
-  graph.mapValues(_.distinct).toMap
+  graph.view.mapValues(_.distinct).toMap
 }
