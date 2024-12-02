@@ -12,7 +12,7 @@ ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports"
 // }
 
 // For å kunne lage en native app
-enablePlugins(NativeImagePlugin)
+// enablePlugins(NativeImagePlugin)
 
 // For å teste ytelse på kald JVM:
 // fork := true
@@ -29,9 +29,10 @@ lazy val root = project
     ),
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "upickle" % "4.0.2",
+      "org.typelevel" %% "cats-parse" % "1.0.0",
       "org.scalanlp" %% "breeze" % "2.1.0",
       "org.scalanlp" %% "breeze-viz" % "2.1.0"
-    ),
-    nativeImageOptions += "--no-fallback",
-    nativeImageVersion := "22.1.0"
+    )
+    // nativeImageOptions += "--no-fallback",
+    // nativeImageVersion := "22.1.0"
   )
