@@ -19,9 +19,18 @@ def day09: Unit = {
     .zipWithIndex
     .map { case ((x, y), z) => (x, (z, y)) }
 
-  val n = parsed.size
-  val (_, (_, size)) = parsed.last
-  val part1 = parsed
+  val part1 = partition1(parsed)
+    .zipWithIndex
+    .foldLeft(BigInt(0)) { case (checksum, (id, number)) =>
+      checksum + id * number
+    }
+  println(part1)
+}
+
+private def partition1(input: Vector[(Int, (Int, Int))]) = {
+  val n = input.size
+  val (_, (_, size)) = input.last
+  input
     .foldLeft((n - 1, size, Vector[Int]())) {
       case ((p0, r0, acc), (free, (id, size))) if p0 < id =>
         (0, 0, acc)
@@ -35,11 +44,11 @@ def day09: Unit = {
           val id1 = {
             if r == 0 then
               p -= 1
-              val (_, (idd, f)) = parsed(p)
+              val (_, (idd, f)) = input(p)
               r = f - 1
               idd
             else
-              val (_, (idd, _)) = parsed(p)
+              val (_, (idd, _)) = input(p)
               r -= 1
               idd
           }
@@ -49,10 +58,5 @@ def day09: Unit = {
         val collected = (0 until size).map(_ => id).toVector
         (p, r, acc ++ moved ++ collected)
     }
-    ._3
-    .zipWithIndex
-    .foldLeft(BigInt(0)) { case (checksum, (id, number)) =>
-      checksum + id * number
-    }
-  println(part1)
+      ._3
 }
