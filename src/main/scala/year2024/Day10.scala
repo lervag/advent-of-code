@@ -31,8 +31,8 @@ def day10: Unit = {
   source.close()
 
   val directions = List((1, 0), (0, -1), (-1, 0), (0, 1))
-  val cache = mutable.Map[Point, List[(Point)]]()
-  def findTrailsDFS(height: Int, position: Point): List[(Point)] =
+  val cache = mutable.Map[Point, List[Point]]()
+  def findTrailsDFS(height: Int, position: Point): List[Point] =
     if height == 9 then List(position)
     else cache.getOrElseUpdate(position, {
       val trails = directions
