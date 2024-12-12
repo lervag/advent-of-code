@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "3.5.1"
+ThisBuild / scalaVersion := "3.6.2"
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
 // Comment this out to use Scala Native
@@ -29,7 +29,7 @@ lazy val root = project
     ),
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "upickle" % "4.0.2",
-      "org.typelevel" %% "cats-parse" % "1.0.0",
+      "org.typelevel" %% "cats-parse" % "1.1.0",
       "org.scalanlp" %% "breeze" % "2.1.0",
       "org.scalanlp" %% "breeze-viz" % "2.1.0"
     )

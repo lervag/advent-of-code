@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.MapView
 
 def day12: Unit = {
-  val source = Source.fromFile("resources/2024/day-12")
+  val source = Source.fromFile("resources/2024/day-12a")
   val regions = source
     .getLines()
     .toVector
@@ -26,7 +26,6 @@ def day12: Unit = {
   println(part1)
 
   val part2 = regions
-    .filter(_._1 == 'F')
     .mapValues(_.map { region => (region.size, calculateSides(region)) })
     .price
   println(part2)
@@ -50,19 +49,25 @@ private def intoRegions(v: Vector[Point]): Vector[Set[Point]] =
 private def calculatePerimiter(region: Set[Point]): Int =
   region.toVector.map { p => 4 - region.count(p.isAdjacentTo(_)) }.sum
 
-private def calculateSides(region: Set[Point]): Int = {
-  // 12          4
-  // AAAAAA  4   AAAA
-  // AAA  A  BB
-  // AAA  A  BB   8     4
-  // A  AAA       C     D
-  // A  AAA       CC
-  // AAAAAA        C
+private def calculateSides(region: Set[Point]): Int =
+  Vector((1, 0), (0, -1), (-1, 0), (0, 1)).flatMap { d =>
+    region.toVector
+      .collect { case p if !region.contains(p + d) => p }
+      .groupMap
+        { p => if d._1 == 0 then p._2 else p._1 }
+        { p => if d._1 == 0 then p._1 else p._2 }
+      .view
+      .mapValues(countAdjacentGroups)
+      .values
+  }.sum
 
-  region.toVector.map { p =>
-
-    val adjacents = region.filter(p.isAdjacentTo(_))
-  }
-
-  0
-}
+private def countAdjacentGroups(numbers: Vector[Int]): Int =
+  numbers.sorted
+    .foldLeft(0, Option.empty[Int]) {
+      case ((count, None), n) =>
+        (count + 1, Some(n))
+      case ((count, Some(prev)), n) =>
+        if (prev + 1 == n) (count, Some(n))
+        else (count + 1, Some(n))
+    }
+    ._1
