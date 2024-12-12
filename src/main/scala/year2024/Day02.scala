@@ -21,7 +21,7 @@ def day02: Unit = {
   println(reports.count(is_safe_with_dampener))
 }
 
-def is_safe(report: Vector[Int]): Boolean = {
+private def is_safe(report: Vector[Int]): Boolean = {
   val diffs = report
     .sliding(2)
     .map {
@@ -36,7 +36,7 @@ def is_safe(report: Vector[Int]): Boolean = {
   too_large == 0 && (same_sign == 0 || same_sign == diffs.length)
 }
 
-def is_safe_with_dampener(report: Vector[Int]): Boolean = {
+private def is_safe_with_dampener(report: Vector[Int]): Boolean = {
   if is_safe(report) then true
   else {
     var i = 0

@@ -4,9 +4,6 @@ import scala.io.Source
 import scala.collection.mutable
 
 def day10: Unit = {
-  type Point = (Int, Int)
-  extension (a: Point) def +(b: Point): Point = (a._1 + b._1, a._2 + b._2)
-
   case class TopographicMap(heights: Vector[Vector[Int]]) {
     private val size = heights.size
 

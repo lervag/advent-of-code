@@ -4,8 +4,6 @@ import scala.io.Source
 import scala.collection.mutable
 import cats.parse.{Parser => P, Numbers}
 
-case class Position(i: Int, j: Int)
-
 def day06: Unit = {
   val source = Source.fromFile("resources/2024/day-06a")
   val lines = source.getLines().toVector

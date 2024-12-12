@@ -12,7 +12,7 @@ def day04: Unit = {
   println(part2(lines))
 }
 
-def part2(lines: Vector[String]): Integer =
+private def part2(lines: Vector[String]): Integer =
   lines
     .map(_.toVector)
     .slide3x3 { (x, y) =>
@@ -22,7 +22,7 @@ def part2(lines: Vector[String]): Integer =
     .sum
 
 extension (vector: Vector[Vector[Char]])
-  def slide3x3[B](f: (String, String) => B): Vector[B] = {
+  private def slide3x3[B](f: (String, String) => B): Vector[B] = {
     (for {
       i <- 0 to vector.length - 3
       j <- 0 to vector.length - 3
@@ -34,7 +34,7 @@ extension (vector: Vector[Vector[Char]])
     }).toVector
   }
 
-def part1(lines: Vector[String]): Integer = {
+private def part1(lines: Vector[String]): Integer = {
   val strings = {
     val transposed = lines.transpose.map(_.mkString)
     val diagonals1 = (for {
