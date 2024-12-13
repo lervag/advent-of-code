@@ -10,3 +10,20 @@ extension (a: Point)
       || (a._1 == b._1 && math.abs(a._2 - b._2) == 1)
 
 case class Position(i: Int, j: Int)
+
+def egcd(m: Int, n: Int) = egcdaux(1, 0, 0, 1, m, n)
+
+private def egcdaux(
+    a1: Int,
+    b1: Int,
+    a: Int,
+    b: Int,
+    c: Int,
+    d: Int
+): (Int, Int, Int) = {
+  val q = c / d
+  val r = c % d
+  if (r == 0)
+    (a, b, d)
+  else egcdaux(a, b, a1 - q * a, b1 - q * b, d, r)
+}
