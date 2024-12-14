@@ -97,7 +97,7 @@ private def trailToGraph(trails: Vector[Vector[Char]]) = {
       nextPositions.foreach { newPos => queue.enqueue((nextNodePos, newPos)) }
   }
 
-  graph.mapValues(_.toVector).toMap
+  graph.view.mapValues(_.toVector).toMap
 }
 
 private def findLongestHikes(

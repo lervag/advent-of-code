@@ -24,8 +24,21 @@ lazy val root = project
     version := "0.15.0",
     semanticdbEnabled := true,
     scalacOptions ++= Seq(
+      "-encoding",
+      "utf8",
+      "-deprecation",
+      "-feature",
       "-unchecked",
-      "-deprecation"
+      "-language:experimental.macros",
+      "-language:higherKinds",
+      "-language:implicitConversions",
+      "-Ykind-projector",
+      "-Wunused:implicits",
+      "-Wunused:explicits",
+      "-Wunused:imports",
+      "-Wunused:params",
+      "-Wunused:privates",
+      // "-Xfatal-warnings",
     ),
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "upickle" % "4.0.2",
