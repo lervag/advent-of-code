@@ -1,11 +1,6 @@
 package year2023
 
 import scala.io.Source
-import scala.math.Ordering.Implicits._
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.immutable.NumericRange.Inclusive
-import scala.collection.immutable.NumericRange
 
 def day06: Unit = {
   val source = Source.fromFile("resources/2023/day-06")

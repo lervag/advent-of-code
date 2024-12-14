@@ -1,10 +1,8 @@
 package year2023
 
-import scala.io.Source
 import scala.collection.mutable
-import scala.collection.mutable.LinkedHashMap
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Stack
+import scala.io.Source
 
 def day16: Unit = {
   val source = Source.fromFile("resources/2023/day-16")
@@ -22,10 +20,10 @@ def day16: Unit = {
     d <- Direction.values
   } yield (
     d match {
-      case Direction.Left  => Beam(i, n, d)
-      case Direction.Up    => Beam(n, i, d)
+      case Direction.Left => Beam(i, n, d)
+      case Direction.Up => Beam(n, i, d)
       case Direction.Right => Beam(i, 0, d)
-      case Direction.Down  => Beam(0, i, d)
+      case Direction.Down => Beam(0, i, d)
     }
   )
   val part2 = beams.map(contraption.runLightDFS(_).size).max
@@ -65,21 +63,21 @@ sealed case class Contraption(mirrors: Vector[Vector[Char]]) {
               beamStack += cur.split()
               beamCreated += beamStack.last.position
             Direction.Left
-          case ('/', Direction.Left)   => Direction.Down
-          case ('/', Direction.Up)     => Direction.Right
-          case ('/', Direction.Right)  => Direction.Up
-          case ('/', Direction.Down)   => Direction.Left
-          case ('\\', Direction.Left)  => Direction.Up
+          case ('/', Direction.Left) => Direction.Down
+          case ('/', Direction.Up) => Direction.Right
+          case ('/', Direction.Right) => Direction.Up
+          case ('/', Direction.Down) => Direction.Left
+          case ('\\', Direction.Left) => Direction.Up
           case ('\\', Direction.Right) => Direction.Down
-          case ('\\', Direction.Down)  => Direction.Right
-          case ('\\', Direction.Up)    => Direction.Left
-          case _                       => cur.direction
+          case ('\\', Direction.Down) => Direction.Right
+          case ('\\', Direction.Up) => Direction.Left
+          case _ => cur.direction
         }
         cur.direction match {
-          case Direction.Left  => cur.x -= 1
-          case Direction.Up    => cur.y -= 1
+          case Direction.Left => cur.x -= 1
+          case Direction.Up => cur.y -= 1
           case Direction.Right => cur.x += 1
-          case Direction.Down  => cur.y += 1
+          case Direction.Down => cur.y += 1
         }
       }
     }
@@ -87,13 +85,16 @@ sealed case class Contraption(mirrors: Vector[Vector[Char]]) {
   }
 
   override def toString() = {
-    mirrors.map { row =>
-      row.map { _ match {
-          case '.' => ' '
-          case chr => chr
-        }
-      }.mkString
-    }.mkString("\n")
+    mirrors
+      .map { row =>
+        row.map {
+          _ match {
+            case '.' => ' '
+            case chr => chr
+          }
+        }.mkString
+      }
+      .mkString("\n")
   }
 }
 
@@ -102,18 +103,18 @@ sealed class Beam(var y: Int, var x: Int, var direction: Direction) {
 
   def split() =
     direction match {
-      case Direction.Left  => Beam(y, x, Direction.Down)
-      case Direction.Up    => Beam(y, x, Direction.Right)
+      case Direction.Left => Beam(y, x, Direction.Down)
+      case Direction.Up => Beam(y, x, Direction.Right)
       case Direction.Right => Beam(y, x, Direction.Down)
-      case Direction.Down  => Beam(y, x, Direction.Right)
+      case Direction.Down => Beam(y, x, Direction.Right)
     }
 
   override def toString() = {
     val d = direction match {
-      case Direction.Left  => ""
-      case Direction.Up    => ""
+      case Direction.Left => ""
+      case Direction.Up => ""
       case Direction.Right => ""
-      case Direction.Down  => ""
+      case Direction.Down => ""
     }
     s"($y, $x) $d "
   }

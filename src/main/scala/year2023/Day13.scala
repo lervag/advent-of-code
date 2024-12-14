@@ -1,7 +1,6 @@
 package year2023
 
 import scala.io.Source
-import scala.collection.mutable
 
 def day13: Unit = {
   val source = Source.fromFile("resources/2023/day-13")
@@ -34,7 +33,7 @@ def day13: Unit = {
 
 private def parsePatterns(chunk: Vector[String]) = {
   val bits = chunk.map(
-    _.replaceAllLiterally(".", "0").replaceAllLiterally("#", "1")
+    _.replace(".", "0").replace("#", "1")
   )
   val rows = bits.map(Integer.parseInt(_, 2))
   val cols = bits.transpose.map { v => Integer.parseInt(v.mkString, 2) }

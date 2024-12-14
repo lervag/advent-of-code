@@ -1,7 +1,6 @@
 package year2023
 
 import scala.io.Source
-import scala.collection.mutable.LinkedHashMap
 
 def day15: Unit = {
   val source = Source.fromFile("resources/2023/day-15")
@@ -14,12 +13,12 @@ def day15: Unit = {
   val part2 = sequence
     .flatMap {
       case s"$label=$n" => Some((hash(label), label, n.toInt))
-      case s"$label-"   => Some((hash(label), label, 0))
-      case _            => None
+      case s"$label-" => Some((hash(label), label, 0))
+      case _ => None
     }
     .groupBy(_._1)
     .view
-    .mapValues(_.foldLeft(LinkedHashMap.empty[String, Int]) {
+    .mapValues(_.foldLeft(Map.empty[String, Int]) {
       case (acc, (_, label, n)) =>
         if (n == 0) acc - label
         else acc + (label -> n)

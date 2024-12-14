@@ -69,23 +69,28 @@ private def intersection(h1: Hail, h2: Hail): Option[(Double, Double)] = {
         Some((h1.x + t1 * h1.u, h1.y + t1 * h1.v))
 }
 
-private def solveUsingGaussianElimination(h1: Hail, h2: Hail, h3: Hail, h4: Hail) = {
+private def solveUsingGaussianElimination(
+    h1: Hail,
+    h2: Hail,
+    h3: Hail,
+    h4: Hail
+) = {
   val matrixA = Vector(
-    Vector((h2.v - h1.v), (h1.u - h2.u),     0L    , (h1.y - h2.y), (h2.x - h1.x),     0L    ),
-    Vector((h3.v - h1.v), (h1.u - h3.u),     0L    , (h1.y - h3.y), (h3.x - h1.x),     0L    ),
-    Vector((h4.v - h1.v), (h1.u - h4.u),     0L    , (h1.y - h4.y), (h4.x - h1.x),     0L    ),
-    Vector((h2.w - h1.w),     0L    , (h1.u - h2.u), (h1.z - h2.z),     0L    , (h2.x - h1.x)),
-    Vector((h3.w - h1.w),     0L    , (h1.u - h3.u), (h1.z - h3.z),     0L    , (h3.x - h1.x)),
-    Vector((h4.w - h1.w),     0L    , (h1.u - h4.u), (h1.z - h4.z),     0L    , (h4.x - h1.x)),
+    Vector((h2.v - h1.v), (h1.u - h2.u), 0L, (h1.y - h2.y), (h2.x - h1.x), 0L),
+    Vector((h3.v - h1.v), (h1.u - h3.u), 0L, (h1.y - h3.y), (h3.x - h1.x), 0L),
+    Vector((h4.v - h1.v), (h1.u - h4.u), 0L, (h1.y - h4.y), (h4.x - h1.x), 0L),
+    Vector((h2.w - h1.w), 0L, (h1.u - h2.u), (h1.z - h2.z), 0L, (h2.x - h1.x)),
+    Vector((h3.w - h1.w), 0L, (h1.u - h3.u), (h1.z - h3.z), 0L, (h3.x - h1.x)),
+    Vector((h4.w - h1.w), 0L, (h1.u - h4.u), (h1.z - h4.z), 0L, (h4.x - h1.x))
   )
 
   val b = Vector(
-    h1.u*h1.y - h1.x*h1.v - h2.u*h2.y + h2.x*h2.v,
-    h1.u*h1.y - h1.x*h1.v - h3.u*h3.y + h3.x*h3.v,
-    h1.u*h1.y - h1.x*h1.v - h4.u*h4.y + h4.x*h4.v,
-    h1.u*h1.z - h1.x*h1.w - h2.u*h2.z + h2.x*h2.w,
-    h1.u*h1.z - h1.x*h1.w - h3.u*h3.z + h3.x*h3.w,
-    h1.u*h1.z - h1.x*h1.w - h4.u*h4.z + h4.x*h4.w
+    h1.u * h1.y - h1.x * h1.v - h2.u * h2.y + h2.x * h2.v,
+    h1.u * h1.y - h1.x * h1.v - h3.u * h3.y + h3.x * h3.v,
+    h1.u * h1.y - h1.x * h1.v - h4.u * h4.y + h4.x * h4.v,
+    h1.u * h1.z - h1.x * h1.w - h2.u * h2.z + h2.x * h2.w,
+    h1.u * h1.z - h1.x * h1.w - h3.u * h3.z + h3.x * h3.w,
+    h1.u * h1.z - h1.x * h1.w - h4.u * h4.z + h4.x * h4.w
   )
 
   val invA = invert(matrixA)
@@ -150,13 +155,21 @@ private def invert(matrix: Vector[Vector[Long]]): Vector[Vector[Double]] = {
   inverse.map(_.toVector).toVector
 }
 
-private def swapRowInPlace(matrix: Buffer[Buffer[Double]], r1: Int, r2: Int): Unit = {
+private def swapRowInPlace(
+    matrix: Buffer[Buffer[Double]],
+    r1: Int,
+    r2: Int
+): Unit = {
   val tempRow = matrix(r1)
   matrix(r1) = matrix(r2)
   matrix(r2) = tempRow
 }
 
-private def swapColumnInPlace(matrix: Buffer[Buffer[Double]], c1: Int, c2: Int): Unit =
+private def swapColumnInPlace(
+    matrix: Buffer[Buffer[Double]],
+    c1: Int,
+    c2: Int
+): Unit =
   for (row <- 0 until matrix.size) {
     val tempCell = matrix(row)(c1)
     matrix(row)(c1) = matrix(row)(c2)
@@ -166,24 +179,24 @@ private def swapColumnInPlace(matrix: Buffer[Buffer[Double]], c1: Int, c2: Int):
 private def newtonSolver(h1: Hail, h2: Hail, h3: Hail, h4: Hail) = {
   import breeze.linalg._
   val matrixA = DenseMatrix(
-    ((h2.v - h1.v), (h1.u - h2.u),     0L    , (h1.y - h2.y), (h2.x - h1.x),     0L    ),
-    ((h3.v - h1.v), (h1.u - h3.u),     0L    , (h1.y - h3.y), (h3.x - h1.x),     0L    ),
-    ((h4.v - h1.v), (h1.u - h4.u),     0L    , (h1.y - h4.y), (h4.x - h1.x),     0L    ),
-    ((h2.w - h1.w),     0L    , (h1.u - h2.u), (h1.z - h2.z),     0L    , (h2.x - h1.x)),
-    ((h3.w - h1.w),     0L    , (h1.u - h3.u), (h1.z - h3.z),     0L    , (h3.x - h1.x)),
-    ((h4.w - h1.w),     0L    , (h1.u - h4.u), (h1.z - h4.z),     0L    , (h4.x - h1.x)),
+    ((h2.v - h1.v), (h1.u - h2.u), 0L, (h1.y - h2.y), (h2.x - h1.x), 0L),
+    ((h3.v - h1.v), (h1.u - h3.u), 0L, (h1.y - h3.y), (h3.x - h1.x), 0L),
+    ((h4.v - h1.v), (h1.u - h4.u), 0L, (h1.y - h4.y), (h4.x - h1.x), 0L),
+    ((h2.w - h1.w), 0L, (h1.u - h2.u), (h1.z - h2.z), 0L, (h2.x - h1.x)),
+    ((h3.w - h1.w), 0L, (h1.u - h3.u), (h1.z - h3.z), 0L, (h3.x - h1.x)),
+    ((h4.w - h1.w), 0L, (h1.u - h4.u), (h1.z - h4.z), 0L, (h4.x - h1.x))
   )
 
   val b = DenseVector(
-    h1.u*h1.y - h1.x*h1.v - h2.u*h2.y + h2.x*h2.v,
-    h1.u*h1.y - h1.x*h1.v - h3.u*h3.y + h3.x*h3.v,
-    h1.u*h1.y - h1.x*h1.v - h4.u*h4.y + h4.x*h4.v,
-    h1.u*h1.z - h1.x*h1.w - h2.u*h2.z + h2.x*h2.w,
-    h1.u*h1.z - h1.x*h1.w - h3.u*h3.z + h3.x*h3.w,
-    h1.u*h1.z - h1.x*h1.w - h4.u*h4.z + h4.x*h4.w
+    h1.u * h1.y - h1.x * h1.v - h2.u * h2.y + h2.x * h2.v,
+    h1.u * h1.y - h1.x * h1.v - h3.u * h3.y + h3.x * h3.v,
+    h1.u * h1.y - h1.x * h1.v - h4.u * h4.y + h4.x * h4.v,
+    h1.u * h1.z - h1.x * h1.w - h2.u * h2.z + h2.x * h2.w,
+    h1.u * h1.z - h1.x * h1.w - h3.u * h3.z + h3.x * h3.w,
+    h1.u * h1.z - h1.x * h1.w - h4.u * h4.z + h4.x * h4.w
   )
 
-  val x = inv(matrixA) * b.mapValues(_.toDouble)
+  val x = inv(matrixA.mapValues(_.toDouble)) * b.mapValues(_.toDouble)
   x(0).toLong + x(1).toLong + x(2).toLong + 1
 }
 

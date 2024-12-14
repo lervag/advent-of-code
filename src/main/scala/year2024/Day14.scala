@@ -43,6 +43,12 @@ def day14: Unit = {
       }
       .mkString("\n")
 
+  def writeRobotsOnMap(robots: List[Robot], time: Int): Unit =
+    Files.write(
+      Paths.get(f"map-$time%05d.txt"),
+      (robotsOnMap(robots) + "\n").getBytes(StandardCharsets.UTF_8)
+    )
+
   def robotsInRegion(
       robots: List[Robot],
       i0: Int,
@@ -89,10 +95,7 @@ def day14: Unit = {
 
   // (1 to 7000).foldLeft(robots) { (r, t) =>
   //   val robots = r.map(_.move())
-  //   Files.write(
-  //     Paths.get(f"map-$t%05d.txt"),
-  //     (robotsOnMap(robots) + "\n").getBytes(StandardCharsets.UTF_8)
-  //   )
+  //   writeRobotsOnMap(robots, t)
   //   robots
   // }
 }

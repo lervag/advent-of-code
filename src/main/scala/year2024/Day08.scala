@@ -1,7 +1,6 @@
 package year2024
 
 import scala.io.Source
-import scala.collection.mutable
 
 def day08: Unit = {
   val source = Source.fromFile("resources/2024/day-08a")

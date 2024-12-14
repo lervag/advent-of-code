@@ -1,8 +1,8 @@
 package year2024
 
+import cats.parse.{Numbers, Parser as P}
+
 import scala.io.Source
-import scala.collection.mutable
-import cats.parse.{Parser => P, Numbers}
 
 def day07: Unit = {
   val parser = (

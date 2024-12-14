@@ -1,9 +1,8 @@
 package year2024
 
+import cats.parse.{Numbers, Parser, Rfc5234}
+
 import scala.io.Source
-import scala.collection.mutable
-import cats.parse.{Rfc5234, Parser, Numbers}
-import year2023.gcd
 
 def day13: Unit = {
   val source = Source.fromFile("resources/2024/day-13a")

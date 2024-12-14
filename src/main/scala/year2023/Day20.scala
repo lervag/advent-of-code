@@ -1,8 +1,7 @@
 package year2023
 
-import scala.io.Source
 import scala.collection.mutable
-import scala.collection.mutable.Queue
+import scala.io.Source
 
 def day20(): Unit = {
   val source = Source.fromFile("resources/2023/day-20")
@@ -112,7 +111,9 @@ sealed case class Conjunction(name: String, destinations: Vector[String])
       Pulse(output, name, d)
     }
 
-  override def reset(): Unit = mostRecentPulse.map { (key, value) => key -> false }
+  override def reset(): Unit = mostRecentPulse.map { (key, value) =>
+    key -> false
+  }
 
   override def toString =
     s"&$name $mostRecentPulse: ${destinations.mkString(", ")}"

@@ -77,7 +77,7 @@ private def calculateWinnings(
 }
 
 private def getType(hand: Vector[Char]): Int = {
-  val map = hand.groupBy(identity).mapValues(_.size).toVector
+  val map = hand.groupBy(identity).view.mapValues(_.size).toVector
   map.size match {
     case 1 => 6
     case 2 =>
@@ -100,13 +100,14 @@ private def getTypeJoker(hand: Vector[Char]): Int = {
   val map = hand
     .filter(_ != 'J')
     .groupBy(identity)
+    .view
     .mapValues(_.size)
     .toVector
   val counts = map.map(_._2)
 
   (map.size, jokers) match {
-    case (0, 5)          => 6
-    case (1, _)          => 6
+    case (0, 5) => 6
+    case (1, _) => 6
     case (2, j) if j > 1 => 5
     case (2, j) if j <= 1 =>
       if (counts.contains(4 - j))

@@ -1,7 +1,5 @@
 package year2024
 
-import scala.collection.mutable
-
 type Point = (Int, Int)
 extension (a: Point)
   def +(b: Point): Point = (a._1 + b._1, a._2 + b._2)

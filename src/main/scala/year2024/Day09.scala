@@ -1,8 +1,8 @@
 package year2024
 
+import cats.parse.Numbers
+
 import scala.io.Source
-import scala.collection.mutable
-import cats.parse.{Parser => P, Numbers}
 
 def day09: Unit = {
   val source = Source.fromFile("resources/2024/day-09")

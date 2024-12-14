@@ -14,7 +14,7 @@ def day08: Unit = {
   val paths =
     lines.drop(2).map { case s"$x = ($y, $z)" => x -> Vector(y, z) }.toMap
 
-  val part1 = Stream
+  val part1 = LazyList
     .iterate((0, "AAA")) { case (i, c) =>
       (i + 1, paths(c)(directions(i % directions.size)))
     }
@@ -24,7 +24,7 @@ def day08: Unit = {
     .getOrElse(0)
 
   val getSteps: (BigInt, String) => BigInt = (startStep, startPos) => {
-    Stream
+    LazyList
       .iterate((startStep, startPos)) { case (i, c) =>
         (i + 1, paths(c)(directions((i % directions.size).toInt)))
       }

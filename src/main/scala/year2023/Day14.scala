@@ -1,8 +1,7 @@
 package year2023
 
-import scala.io.Source
 import scala.collection.mutable
-import scala.annotation.tailrec
+import scala.io.Source
 
 def day14: Unit = {
   val source = Source.fromFile("resources/2023/day-14")
@@ -26,7 +25,7 @@ def day14: Unit = {
   }
   val first = cacheBoard(previousBoard)
   val position = (1000000000 - first) % (index - first)
-  val part2 = cacheLoad(first+position)
+  val part2 = cacheLoad(first + position)
   println(s"Part 2: $part2")
 
   // LEARNING LazyList
@@ -59,7 +58,8 @@ private def tiltVectorLeft(v: Vector[Char]) =
   cacheLeft.getOrElseUpdate(
     v,
     v.foldLeft((Vector.empty[Char], 0)) {
-      case ((acc, i), 'O') => ((acc.take(i) :+ 'O') ++ acc.takeRight(acc.size - i), i)
+      case ((acc, i), 'O') =>
+        ((acc.take(i) :+ 'O') ++ acc.takeRight(acc.size - i), i)
       case ((acc, i), '.') => (acc :+ '.', i)
       case ((acc, i), chr) => (acc :+ chr, acc.size + 1)
     }._1
@@ -70,7 +70,8 @@ private def tiltVectorRight(v: Vector[Char]) =
   cacheRight.getOrElseUpdate(
     v,
     v.foldLeft((Vector.empty[Char], 0)) {
-      case ((acc, i), '.') => ((acc.take(i) :+ '.') ++ acc.takeRight(acc.size - i), i)
+      case ((acc, i), '.') =>
+        ((acc.take(i) :+ '.') ++ acc.takeRight(acc.size - i), i)
       case ((acc, i), 'O') => (acc :+ 'O', i)
       case ((acc, i), chr) => (acc :+ chr, acc.size + 1)
     }._1
@@ -79,5 +80,5 @@ private def tiltVectorRight(v: Vector[Char]) =
 private def calculateLoad(board: Vector[Vector[Char]]) =
   board.transpose
     .zip((1 to board.size).reverse)
-    .map { (v, load) => v.count(_ == 'O')*load }
+    .map { (v, load) => v.count(_ == 'O') * load }
     .sum

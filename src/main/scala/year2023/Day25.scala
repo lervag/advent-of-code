@@ -1,9 +1,8 @@
 package year2023
 
-import scala.io.Source
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.annotation.tailrec
+import scala.collection.mutable
+import scala.io.Source
 import scala.util.Random
 
 def day25(): Unit = {
