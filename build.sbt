@@ -32,7 +32,7 @@ lazy val root = project
       "-language:experimental.macros",
       "-language:higherKinds",
       "-language:implicitConversions",
-      "-Ykind-projector",
+      "-Xkind-projector",
       "-Wunused:implicits",
       "-Wunused:explicits",
       "-Wunused:imports",
