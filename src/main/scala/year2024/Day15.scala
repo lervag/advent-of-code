@@ -2,10 +2,12 @@ package year2024
 
 import cats.parse.{Parser, Rfc5234}
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
 import scala.io.Source
 
 def day15: Unit = {
-  val source = Source.fromFile("resources/2024/day-15a")
+  val source = Source.fromFile("resources/2024/day-15b")
   val input = source.getLines().mkString("\n")
   source.close()
 
@@ -77,28 +79,37 @@ def day15: Unit = {
     movedBoxes.map { (i, j) => i + 100 * j }.sum
   }
 
-  // val part1 = parser
-  //   .parseAll(input)
-  //   .map { case ((w, b, r), m) => performMoves1(w, b, r, m) }
-  //   .getOrElse(-1)
-
-  def printMap(walls: Set[Point], boxes: Set[Point], robot: Point, dir: Point = (0, 0)) = {
+  def writeMapToFile(
+      n: Int,
+      walls: Set[Point],
+      boxes: Set[Point],
+      robot: Point,
+      dir: Point = (0, 0)
+  ) = {
     val nx = walls.map(_._1).max
     val ny = walls.map(_._2).max
-    (0 to ny)
+    val mapAsString = (0 to ny)
       .map { j =>
-        val line = (0 to nx).map { i =>
-          val next = robot + dir
-          if robot == (i, j) then '◉'
-          else if next == (i, j) then '•'
+        (0 to nx).map { i =>
+          if robot == (i, j) then
+            dir match {
+              case (0, 0) => '◉'
+              case (1, 0) => "🡆"
+              case (-1, 0) => "🡄"
+              case (0, 1) => "🡇"
+              case (0, -1) => "🡅"
+            }
           else if walls.contains((i, j)) then '▒'
           else if boxes.contains((i, j)) then ''
-          else if boxes.contains((i-1, j)) then ' '
+          else if boxes.contains((i - 1, j)) then ' '
           else ' '
         }.mkString
-        println(line)
       }
-    println()
+      .mkString("\n")
+    Files.write(
+      Paths.get(f"map-at-$n%05d.txt"),
+      (f"Map: $n%05d\n" + mapAsString + "\n").getBytes(StandardCharsets.UTF_8)
+    )
   }
 
   def move2(
@@ -108,23 +119,23 @@ def day15: Unit = {
       movedBoxes: Set[Point],
       otherBoxes: Set[Point]
   ): Option[(Set[Point], Set[Point])] = {
-    val checkPoints =
-      if dir._2 == 0 then s.map(_ + dir)
-      else s.flatMap { p => Set(p + dir, p + dir + (-1, 0)) }
+    val checkPoints = s.map(_ + dir)
 
     if checkPoints.exists(walls.contains(_)) then None
     else
       val boxesToMove = otherBoxes.filter { b =>
-        if dir == (-1, 0) then checkPoints.contains(b + (1, 0))
-        else checkPoints.contains(b)
+        dir match {
+          case (-1, 0) => checkPoints.contains(b + (1, 0))
+          case (0, j) if j != 0 =>
+            checkPoints.contains(b) || checkPoints.contains(b + (1, 0))
+          case _ => checkPoints.contains(b)
+        }
       }
       if boxesToMove.size > 0 then
-        val nextPositionsToCheck = if dir == (1, 0) then
-          boxesToMove.map(_ + dir)
-        else if dir == (-1, 0) then
-          boxesToMove
-        else
-          boxesToMove.flatMap(x => Set(x, x + (1, 0)))
+        val nextPositionsToCheck =
+          if dir == (1, 0) then boxesToMove.map(_ + dir)
+          else if dir == (-1, 0) then boxesToMove
+          else boxesToMove.flatMap(x => Set(x, x + (1, 0)))
         move2(
           nextPositionsToCheck,
           dir,
@@ -142,19 +153,25 @@ def day15: Unit = {
       moves: Vector[Point]
   ) = {
     val (movedBoxes, movedRobot) =
-      moves.foldLeft((boxesInitial, robotInitial)) {
-        case ((boxes, robot), dir) =>
-          printMap(walls, boxes, robot, dir)
-          val (b, r) = move2(Set(robot), dir, walls, Set[Point](), boxes) match {
-            case None => (boxes, robot)
-            case Some(b1, b2) => (b1 ++ b2, robot + dir)
-          }
+      moves.zipWithIndex.foldLeft((boxesInitial, robotInitial)) {
+        case ((boxes, robot), (dir, i)) =>
+          // writeMapToFile(i, walls, boxes, robot, dir)
+          val (b, r) =
+            move2(Set(robot), dir, walls, Set[Point](), boxes) match {
+              case None => (boxes, robot)
+              case Some(b1, b2) => (b1 ++ b2, robot + dir)
+            }
           (b, r)
       }
-    printMap(walls, movedBoxes, movedRobot)
+    // writeMapToFile(moves.size, walls, movedBoxes, movedRobot)
 
     movedBoxes.map { (i, j) => i + 100 * j }.sum
   }
+
+  val part1 = parser
+    .parseAll(input)
+    .map { case ((w, b, r), m) => performMoves1(w, b, r, m) }
+    .getOrElse(-1)
 
   val part2 = parser
     .parseAll(input)
