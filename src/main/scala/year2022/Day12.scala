@@ -6,7 +6,7 @@ import scala.io.Source
 type Index = (Int, Int)
 
 def day12: Unit = {
-  val source = Source.fromFile("resources/input-day-12")
+  val source = Source.fromFile("resources/2022/day-12")
   val mapRaw = source.getLines.toArray.map(_.toCharArray.map(_.toInt - 96))
   source.close
 
