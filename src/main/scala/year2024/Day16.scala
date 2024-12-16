@@ -2,23 +2,22 @@ package year2024
 
 import cats.parse.{Parser, Rfc5234}
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import scala.collection.mutable
+import scala.collection.mutable.PriorityQueue
 import scala.io.Source
 
 def day16: Unit = {
-  val testInputs = List(
-    ("resources/2024/day-16", 7036),
-    ("resources/2024/day-16a", 11048)
-  )
-  val test = testInputs.head
+  val choiceInput = List(
+    ("resources/2024/day-16", (7036, 45)),
+    ("resources/2024/day-16a", (11048, 64)),
+    ("resources/2024/day-16b", (0, 0))
+  )(2)
 
-  
-  val source = Source.fromFile(test._1)
+  val source = Source.fromFile(choiceInput._1)
   val input = source.getLines().mkString("\n")
   source.close()
 
-  val parser = (Parser.charIn('#', '.', 'E', 'S').rep <* Rfc5234.lf).rep
+  val parser = (Parser.charIn('#', '.', 'E', 'S').rep <* Rfc5234.lf.rep0).rep
     .map { lists =>
       val coordinates = lists.toList.zipWithIndex
         .flatMap { (row, j) =>
@@ -33,37 +32,51 @@ def day16: Unit = {
       val startpos = coordinates('S').head
       val endpos = coordinates('E').head
       (walls, startpos, endpos)
-    } <* Rfc5234.lf
+    }
 
-  val part1 = parser.parse(input)
-
-  def findShortestPath(
-      pos: Point,
-      dir: Int,
-      points: Int,
-      target: Point,
-      walls: Set[Point]
-  ): Option[Int] = {
-    println((pos, dir))
-    if walls.contains(pos) then None
-    else if pos == target then Some(points)
-    else
-      val newPos = pos + List((1, 0), (0, -1), (-1, 0), (0, 1))(dir)
-      val dirLeft =  dir + 1 % 4
-      val dirRight =  dir - 1 % 4
-      LazyList(
-        findShortestPath(newPos, dir, points + 1, target, walls),
-        findShortestPath(pos, dirLeft, points + 1000, target, walls),
-        findShortestPath(pos, dirRight, points + 1000, target, walls)
-      ).filter(_.nonEmpty)
-      .min
-  }
-
-  // val part1 = parser
-  //   .parse(input)
-    // .map { case (w, s, e) => findShortestPath(s, 0, 0, e, w) }
-    // .getOrElse(None)
+  val (part1, part2) = parser
+    .parseAll(input)
+    .map { case (w, s, e) => findShortestPath(s, 0, e, w) }
+    .getOrElse((0, 0))
 
   println(part1)
-  // println(part2)
+  println(part2)
+}
+
+private def findShortestPath(
+    startPos: Point,
+    startDir: Int,
+    target: Point,
+    walls: Set[Point]
+) = {
+  case class State(path: Vector[Point], direction: Int, cost: Int)
+  implicit val queueOrdering: Ordering[State] =
+    Ordering.by[State, Int](_.cost).reverse
+  val queue = PriorityQueue[State](State(Vector(startPos), startDir, 0))
+
+  val visited = mutable.Map[(Point, Int), Int]()
+  val bestTiles = mutable.Set[Point]()
+  var finalCost = 0
+  val directions = Vector((1, 0), (0, -1), (-1, 0), (0, 1))
+  while (queue.nonEmpty) {
+    val c = queue.dequeue()
+    val position = c.path.last
+
+    if position == target then
+      finalCost = c.cost
+      bestTiles ++= c.path
+    else if !(
+        walls.contains(position)
+          || visited.get((position, c.direction)).exists(_ < c.cost)
+          || (finalCost > 0 && c.cost > finalCost)
+      )
+    then
+      visited((position, c.direction)) = c.cost
+      val nextPos = position + directions(c.direction)
+      queue += State(c.path :+ nextPos, c.direction, c.cost + 1)
+      queue += State(c.path, (c.direction + 1) % 4, c.cost + 1000)
+      queue += State(c.path, (c.direction + 3) % 4, c.cost + 1000)
+  }
+
+  (finalCost, bestTiles.size)
 }
