@@ -14,13 +14,13 @@ def day17: Unit = {
   val input = source.getLines().mkString("\n")
   source.close()
 
-  val ex1 = Program(List(2, 6), 0, 0, 9).run()
-  val ex2 = Program(List(5, 0, 5, 1, 5, 4), 10, 0, 0).run()
-  val ex3 = Program(List(0, 1, 5, 4, 3, 0), 2024, 0, 0).run()
-  val ex4 = Program(List(1, 7), 0, 29, 0).run()
-  val ex5 = Program(List(4, 0), 0, 2024, 43690).run()
-  val ex6a = Program(List(0,3,5,4,3,0), 2024, 0, 0).run()
-  val ex6b = Program(List(0,3,5,4,3,0), 117440, 0, 0).run()
+  // val ex1 = Program(List(2, 6), 0, 0, 9).run()
+  // val ex2 = Program(List(5, 0, 5, 1, 5, 4), 10, 0, 0).run()
+  // val ex3 = Program(List(0, 1, 5, 4, 3, 0), 2024, 0, 0).run()
+  // val ex4 = Program(List(1, 7), 0, 29, 0).run()
+  // val ex5 = Program(List(4, 0), 0, 2024, 43690).run()
+  // val ex6a = Program(List(0, 3, 5, 4, 3, 0), 2024, 0, 0).run()
+  // val ex6b = Program(List(0, 3, 5, 4, 3, 0), 117440, 0, 0).run()
 
   val p_registers =
     ((Parser.string("Register ") ~ Rfc5234.alpha ~ Parser.string(": "))
@@ -39,12 +39,49 @@ def day17: Unit = {
       program.run()
     }
     .getOrElse("Brzzzzt... FAIL FAIL FAIL!")
-
   println(part1)
-  // println(part2)
+
+  val part2 = parser
+    .parseAll(input)
+    .map { case program =>
+      bfsForCoeffs(program, List(5))
+        .map(makeGuessFromCoefficients(_))
+        .min
+    }
+    .getOrElse("Brzzzzt... FAIL FAIL FAIL!")
+  println(part2)
 }
 
-private case class Program(instructions: List[Int], var rega: Int, var regb: Int, var regc: Int) {
+private def makeGuessFromCoefficients(coeffs: List[Int]): Long = coeffs
+  .foldLeft((15, 0.toLong)) { case ((k, sum), a) =>
+    (k - 1, sum + a * math.pow(8, k).toLong)
+  }
+  ._2
+
+private def bfsForCoeffs(
+    program: Program,
+    coefficients: List[Int]
+): Set[List[Int]] = {
+  val result = program
+    .copy(rega = makeGuessFromCoefficients(coefficients))
+    .run()
+    .split(",")
+    .map(_.toInt)
+    .toList
+  val currentIndex = program.instructions.size - coefficients.size
+
+  if result == program.instructions then Set(coefficients)
+  else if program.instructions(currentIndex) != result(currentIndex) then Set()
+  else
+    (0 until 8).flatMap { k => bfsForCoeffs(program, coefficients :+ k) }.toSet
+}
+
+private case class Program(
+    instructions: List[Int],
+    var rega: Long,
+    var regb: Long,
+    var regc: Long
+) {
   private var pointer: Int = 0
   private var output = ""
 
@@ -52,7 +89,7 @@ private case class Program(instructions: List[Int], var rega: Int, var regb: Int
     while (pointer < instructions.size) {
       instructions(pointer) match {
         case 0 => // adv()
-          rega /= math.pow(2, comboOperand).intValue
+          rega = rega / math.pow(2, comboOperand.toDouble).toLong
           pointer += 2
         case 1 => // bxl()
           regb ^= literalOperand
@@ -72,10 +109,10 @@ private case class Program(instructions: List[Int], var rega: Int, var regb: Int
           else output += s",$value"
           pointer += 2
         case 6 => // bdv()
-          regb = rega / math.pow(2, comboOperand).intValue
+          regb = rega / math.pow(2, comboOperand.toDouble).toLong
           pointer += 2
         case 7 => // cdv()
-          regc = rega / math.pow(2, comboOperand).intValue
+          regc = rega / math.pow(2, comboOperand.toDouble).toLong
           pointer += 2
       }
     }
@@ -86,10 +123,9 @@ private case class Program(instructions: List[Int], var rega: Int, var regb: Int
   private def literalOperand = instructions(pointer + 1)
 
   private def comboOperand = instructions(pointer + 1) match {
-    case i if i < 4 => i
     case 4 => rega
     case 5 => regb
     case 6 => regc
-    case 7 => -1
+    case i => i.toLong
   }
 }
