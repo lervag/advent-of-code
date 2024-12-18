@@ -6,6 +6,8 @@ extension (a: Point)
   def isAdjacentTo(b: Point): Boolean =
     (math.abs(a._1 - b._1) == 1 && a._2 == b._2)
       || (a._1 == b._1 && math.abs(a._2 - b._2) == 1)
+  def isInGrid(nx: Int, ny: Int): Boolean =
+    a._1 >= 0 && a._1 < nx && a._2 >= 0 && a._2 < ny
 
 case class Position(i: Int, j: Int)
 
