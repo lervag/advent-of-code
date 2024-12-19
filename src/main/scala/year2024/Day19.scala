@@ -25,34 +25,26 @@ def day19: Unit = {
   val parser =
     (p_towels <* Rfc5234.lf.rep0) ~ (p_designs <* Rfc5234.lf.rep0)
 
-  val part1 = parser
+  val (part1, part2) = parser
     .parseAll(input)
-    .map { (towels, designs) => designs.filter(search(_, towels)).size }
-    .getOrElse(0)
-
-  // val part2 = parser
-  //   .parseAll(input)
-  //   .map { b =>
-  //     bsForTrue(
-  //       0,
-  //       b.size,
-  //       { k => findShortestPath(start, target, b.take(k).toSet) == 0 }
-  //     )
-  //   }
-  //   .getOrElse(0)
+    .map { (towels, designs) =>
+      val arrangements = designs
+        .map(search(_, towels))
+      (arrangements.filter(_ > 0).size, arrangements.sum)
+    }
+    .getOrElse((0, 0.toLong))
 
   println(part1)
-  // println(part2)
+  println(part2)
 }
 
-private val searchCache = mutable.Map[String, Boolean]()
-private def search(input: String, candidates: Set[String]): Boolean =
+private val searchCache = mutable.Map[String, Long]()
+private def search(input: String, candidates: Set[String]): Long =
   searchCache.getOrElseUpdate(
     input,
-    if candidates.contains(input) then true
-    else
-      candidates.filter { next =>
-        input.startsWith(next)
-        && search(input.drop(next.size), candidates)
-      }.size > 0
+    candidates.toVector.map { next =>
+      if input == next then 1
+      else if !input.startsWith(next) then 0
+      else search(input.drop(next.size), candidates)
+    }.sum
   )
