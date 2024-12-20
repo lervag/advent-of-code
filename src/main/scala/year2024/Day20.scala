@@ -7,9 +7,9 @@ import scala.collection.mutable
 import scala.collection.mutable.PriorityQueue
 
 def day20: Unit = {
-  val (choiceInput, _) = List(
-    ("resources/2024/day-20", 0),
-    ("resources/2024/day-20a", 0)
+  val (choiceInput, cutOff) = List(
+    ("resources/2024/day-20", 50),
+    ("resources/2024/day-20a", 100)
   )(1)
 
   val source = Source.fromFile(choiceInput)
@@ -38,14 +38,40 @@ def day20: Unit = {
     .map { case (w, s, e) =>
       val distanceMap = findDistanceMap(s, e, w)
       val distances = findCheatPaths(s, e, w, distanceMap)
-      val p1 = distances.values.filter(_ >= 100).size
-      (p1, 1)
+      val p1 = distances.values.filter(_ >= cutOff).size
+
+      val path = distanceMap.keys.toVector
+      val p2 = distanceMap
+        .toVector
+        .flatMap { (p, d) => findCheats(p, d, path, distanceMap, 20) }
+        .filter(_ >= cutOff)
+        .size
+
+      (p1, p2)
     }
     .getOrElse((0, 0))
 
   println(part1)
-  // println(part2)
+  println(part2)
 }
+
+private def findCheats(
+    cheatStart: Point,
+    startDistance: Int,
+    path: Vector[Point],
+    distanceMap: Map[Point, Int],
+    cheatLength: Int
+) =
+  path
+    .map { cheatEnd =>
+      val moves = cheatStart.distanceTo(cheatEnd)
+      val endDistance = distanceMap(cheatEnd)
+      (moves, startDistance - endDistance - moves)
+    }
+    .filter { (m, s) =>
+      m > 0 && m <= cheatLength && s > 0
+    }
+    .map { (_, s) => s }
 
 private def findDistanceMap(start: Point, target: Point, walls: Set[Point]) = {
   case class State(position: Point, moves: Int = 0)
@@ -110,10 +136,7 @@ private def findCheatPaths(
     else
       directions
         .map { dir => (c.position + dir, dir) }
-        .filter { (newPos, _) =>
-          newPos.isInGrid(size, size)
-          && !visited.contains(newPos)
-        }
+        .filter { (p, _) => p.isInGrid(size, size) && !visited.contains(p) }
         .foreach { (newPos, dir) =>
           if walls.contains(newPos) then
             val cheatPos = newPos + dir
