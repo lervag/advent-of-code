@@ -41,11 +41,9 @@ def day20: Unit = {
       val p1 = distances.values.filter(_ >= cutOff).size
 
       val path = distanceMap.keys.toVector
-      val p2 = distanceMap
-        .toVector
-        .flatMap { (p, d) => findCheats(p, d, path, distanceMap, 20) }
-        .filter(_ >= cutOff)
-        .size
+      val p2 = distanceMap.toVector.flatMap { (p, d) =>
+        findCheats(p, d, path, distanceMap, 20, cutOff)
+      }.size
 
       (p1, p2)
     }
@@ -60,18 +58,19 @@ private def findCheats(
     startDistance: Int,
     path: Vector[Point],
     distanceMap: Map[Point, Int],
-    cheatLength: Int
+    cheatLength: Int,
+    cutOff: Int
 ) =
   path
     .map { cheatEnd =>
       val moves = cheatStart.distanceTo(cheatEnd)
-      val endDistance = distanceMap(cheatEnd)
-      (moves, startDistance - endDistance - moves)
+      (cheatEnd, moves)
     }
-    .filter { (m, s) =>
-      m > 0 && m <= cheatLength && s > 0
+    .filter { (_, m) => m > 0 && m <= cheatLength }
+    .map { (cheatEnd, moves) =>
+      startDistance - distanceMap(cheatEnd) - moves
     }
-    .map { (_, s) => s }
+    .filter { s => s >= cutOff }
 
 private def findDistanceMap(start: Point, target: Point, walls: Set[Point]) = {
   case class State(position: Point, moves: Int = 0)
