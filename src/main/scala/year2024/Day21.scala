@@ -1,64 +1,62 @@
 package year2024
 
+import scala.collection.mutable
+
 def day21: Unit = {
   val input0 = List("029A", "980A", "179A", "456A", "379A")
   val input1 = List("480A", "682A", "140A", "246A", "938A")
 
-  // This works for part 1, but it fails terribly for part 2
-  def codeToPressSequence(keypads: List[Keypad], code: String) = {
-    keypads.foldRight(Vector(code)) { (pad, strings) =>
-      strings.flatMap { currentString =>
-        currentString
-          .map { c => pad.press(c) }
-          .foldLeft(Vector("")) { (acc, list) =>
-            for {
-              prefix <- acc
-              item <- list
-            } yield prefix + item
-          }
+  // This was my first attempt and it worked for part 1
+  // It failed TERRIBLY for part 2
+  def codeToPressSequenceBFS(code: String, keypads: List[Keypad]) =
+    keypads
+      .foldLeft(Vector(code)) { (strings, pad) =>
+        strings.flatMap { currentString =>
+          currentString
+            .map { c => pad.press(c) }
+            .foldLeft(Vector("")) { (acc, list) =>
+              for {
+                prefix <- acc
+                item <- list
+              } yield prefix + item
+            }
+        }
       }
-    }
-  }
+      .map(_.size)
+      .min
 
-  // I think I want a cached depth first approach instead
-  def codeToPressSequenceDF(code: String, keypads: List[Keypad]): Int = ???
+  // Instead, using this cached DFS version everything runs very smoothly
+  val cache = mutable.Map[(String, Int), Long]()
+  def codeToPressSequenceDFS(code: String, keypads: List[Keypad]): Long =
+    cache.getOrElseUpdate(
+      (code, keypads.size),
+      keypads match {
+        case Nil => code.size
+        case padHead :: padTail =>
+          code.map { c =>
+            padHead
+              .press(c)
+              .map { s => codeToPressSequenceDFS(s, padTail) }
+              .min
+          }.sum
+      }
+    )
 
-  // val testing = List("<")
-  //   .map { s =>
-  //     codeToPressSequenceDF(
-  //       s,
-  //       List.fill(2)(DirectionalKeypad()) ++ List(NumericKeypad())
-  //     )
-  //   }
-  // println(testing)
+  val part1 = input1.map { code =>
+    val length = codeToPressSequenceDFS(
+      code,
+      List(NumericKeypad()) ++ List.fill(2)(DirectionalKeypad())
+    )
+    code.take(3).toInt * length
+  }.sum
 
-  val part1 = input1
-    .map { s =>
-      val x = codeToPressSequence(
-        List(
-          DirectionalKeypad(),
-          DirectionalKeypad(),
-          NumericKeypad()
-        ),
-        s
-      ).map(_.size).min
-      val n = s.take(3).toInt
-      (n, x)
-    }
-    .map { (x, y) => x * y }
-    .sum
-
-  // val part2 = input1
-  //   .map { s =>
-  //     val x = codeToPressSequence(
-  //       List.fill(2)(DirectionalKeypad()) ++ List(NumericKeypad()),
-  //       s
-  //     ).map(_.size).min
-  //     val n = s.take(3).toInt
-  //     (n, x)
-  //   }
-  //   .map { (x, y) => x * y }
-  //   .sum
+  val part2 = input1.map { code =>
+    val length = codeToPressSequenceDFS(
+      code,
+      List(NumericKeypad()) ++ List.fill(25)(DirectionalKeypad())
+    )
+    code.take(3).toInt * length
+  }.sum
 
   println(part1)
   println(part2)
