@@ -19,15 +19,37 @@ def day23: Unit = {
   val part1 = findTriplets(adjacencyMap)
   println(part1.size)
 
-  val maxSize = 13
+  val maxSize = adjacencyMap.values.map(_.size).max
+  val part2 = (3 to maxSize)
+    .foldRight(Set[Vector[String]]()) { (i, set) =>
+      if set.isEmpty then findNlets(adjacencyMap, i)
+      else set
+    }
+    .head
+    .mkString(",")
 
   println(part2)
 }
 
+private def findNlets(
+    adjacencyMap: Map[String, Vector[String]],
+    size: Int
+): Set[Vector[String]] =
+  if size < 3 then Set.empty
+  else
+    (for {
+      (source, neighbors) <- adjacencyMap
+      cmb <- neighbors.combinations(size - 1)
+      if cmb.combinations(2).forall {
+        case Vector(node1, node2) => adjacencyMap(node1).contains(node2)
+        case _ => false
+      }
+    } yield (source +: cmb).sorted).toSet
+
 private def findTriplets(
     adjacencyMap: Map[String, Vector[String]]
 ): Set[Vector[String]] =
-  adjacencyMap.toVector
+  adjacencyMap
     .flatMap { case ((node0, connections)) =>
       connections
         .combinations(2)
