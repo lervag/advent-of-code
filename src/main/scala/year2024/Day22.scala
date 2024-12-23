@@ -1,8 +1,8 @@
 package year2024
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.io.Source
+import scala.collection.mutable.Queue
 
 def day22: Unit = {
   val inputFile = List("resources/2024/day-22", "resources/2024/day-22a")(1)
@@ -19,55 +19,48 @@ def day22: Unit = {
     mixAndPrune(s2, 2048 * s2)
   }
 
-  // val part1 = input.map { secret =>
-  //   (0 until 2000).foldLeft(secret) { (nextSecret, _) => evolve(nextSecret) }
-  // }.sum
+  def addToBananaScore(
+      secret: Long,
+      totalBananaScore: mutable.Map[List[Int], Int],
+      generations: Int = 2000
+  ) = {
+    val sequence = Queue[Int]()
+    val sequences = mutable.Set[List[Int]]()
 
-  def getChanges(secret: Long, generations: Int = 2000) = {
+    var i = 0
     var s0 = secret
     var s0digit = (s0 % 10).toInt
-    val prices = ListBuffer[Int]()
-    val changes = ListBuffer[Int]()
-    var i = 0
     while (i < generations) {
       i += 1
       val s1 = evolve(s0)
       val s1digit = (s1 % 10).toInt
-      prices += s1digit
-      changes += s1digit - s0digit
+
+      sequence += s1digit - s0digit
+      if sequence.size > 4 then sequence.dequeue()
+
+      val seqList = sequence.toList
+      if seqList.size == 4 && !sequences.contains(seqList)
+      then
+        sequences += seqList
+        totalBananaScore(seqList) += s1digit
+
       s0 = s1
       s0digit = s1digit
     }
-
-    (prices.toVector, changes.toVector)
   }
 
-  def getSales(prices: Vector[Int], changes: Vector[Int], sequence: Vector[Int]) =
-    changes
-      .sliding(4)
-      .indexOf(sequence) match {
-      case -1 => 0
-      case index => prices(index + 3)
-    }
-
-  val changes = input
-    .map { secret => getChanges(secret) }
-
-  val range = -9 to 9
-  val allCombinations = for {
-    a <- range
-    b <- range
-    c <- range
-    d <- range
-    seq = Vector(a, b, c, d)
-    bananas = changes
-      .map { (p, c) => getSales(p, c, seq) }
-      .sum
-    _ = println(s"$seq gives $bananas bananas")
-  } yield bananas
-
-  val part2 = allCombinations.max
-
+  val part1 = input.map { secret =>
+    (0 until 2000).foldLeft(secret) { (nextSecret, _) => evolve(nextSecret) }
+  }.sum
   println(part1)
+
+  val bananaScores = mutable
+    .Map[List[Int], Int]()
+    .withDefaultValue(0)
+  input.foreach { apeSecret =>
+    addToBananaScore(apeSecret, bananaScores)
+  }
+
+  val part2 = bananaScores.values.max
   println(part2)
 }
