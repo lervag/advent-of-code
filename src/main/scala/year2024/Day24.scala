@@ -34,27 +34,39 @@ def day24: Unit = {
       Rfc5234.lf
     ) <* Rfc5234.lf.rep0)
 
-  val (x, y, z) = parser
+  val gates = parser
     .parseAll(input)
     .map { case (values, gates) =>
       Circuit.setSignals(values)
       Circuit.processGates(gates)
-      (Circuit.getValue("x"), Circuit.getValue("y"), Circuit.getValue("z"))
+      gates
     }
-    .getOrElse((0.toLong, 0.toLong, 0.toLong))
-  println(z)
+    .getOrElse(Nil)
+  val part1 = Circuit.getValue("z")
+  println(part1)
 
   // 4 par av gates har byttet output
   // der er 222 gates og det er UMULIG å brute force her
-  //
-  // x + y = z
-  val z0 = x + y
-  val r = z - x - y
+
+  val z = Circuit.getValue("z")
+  val z0 = Circuit.getValue("x") + Circuit.getValue("y")
+  val r = z - z0
   println(f"${z0.toBinaryString}%46s")
   println(f"${z.toBinaryString}%46s")
   println(f"${r.toBinaryString}%46s")
+  val m = r
+    .toBinaryString
+    .reverse
+    .zipWithIndex
+    .filter((c, i) => c == '1')
+    .map { (c, i) =>
+      f"z$i%02d"
+    }
+  println(m)
 
-  //
+  // gates
+  // -> tree z10 => (xs, ys)
+
   // println(part2)
 }
 
