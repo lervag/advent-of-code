@@ -1,0 +1,15 @@
+[tools]
+uv = 'latest'
+
+[env]
+AOC_USER_AGENT = "karl.yngve@lervag.net"
+_.file = { path = '.session', redact = true }
+
+[settings]
+python.uv_venv_auto = true
+
+[tasks]
+leaderboard = """
+elf leaderboard 2025 2319949
+elf leaderboard 2025 203774
+"""
