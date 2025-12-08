@@ -51,8 +51,8 @@ def create_distance_map(
     junctions: set[Position],
 ) -> dict[tuple[Position, Position], int]:
     dmap: dict[tuple[Position, Position], int] = {}
-    for p1, p2 in itertools.product(junctions, junctions):
-        if p1 == p2 or (p1, p2) in dmap or (p2, p1) in dmap:
+    for p1, p2 in itertools.combinations(junctions, 2):
+        if (p1, p2) in dmap or (p2, p1) in dmap:
             continue
         d = distance(p1, p2)
         dmap[(p1, p2)] = d
