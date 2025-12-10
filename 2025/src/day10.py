@@ -47,6 +47,12 @@ class Machine:
         return -1
 
     def find_fewest_presses_p2(self, i: int, n: int) -> int:
+        # Tror jeg kan løse dette som et lineært problem
+        #   A x = b
+        # der
+        #   b er joltage_target
+        #   x er ukjent (x1, ..., xn) med x1 er antall klikk på knapp 1
+        #   A er matrise sånn at kolonnene representerer knapper
         start_time = time.time()
         print(
             f"Checking machine {i}/{n} with {self.n_lights} lights and {self.n_buttons} buttons"
@@ -69,9 +75,7 @@ class Machine:
         target_sum = sum(self.joltage_target)
         max_size = max(map(lambda b: len(b), self.buttons))
 
-        n = 0
-        while n < 100:
-            n += 1
+        for n in range(1, 100):
             if n * max_size < target_sum:
                 continue
             print(f"-> Trying {n} buttons")
