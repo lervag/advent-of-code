@@ -1,8 +1,11 @@
-from collections import Counter
-from dataclasses import dataclass, field
 import itertools
 import re
 import time
+from collections import Counter
+from dataclasses import dataclass, field
+
+import numpy as np
+from scipy import optimize
 
 
 @dataclass
@@ -47,22 +50,53 @@ class Machine:
         return -1
 
     def find_fewest_presses_p2(self, i: int, n: int) -> int:
-        # Tror jeg kan løse dette som et lineært problem
-        #   A x = b
-        # der
-        #   b er joltage_target
-        #   x er ukjent (x1, ..., xn) med x1 er antall klikk på knapp 1
-        #   A er matrise sånn at kolonnene representerer knapper
         start_time = time.time()
+
         print(
             f"Checking machine {i}/{n} with {self.n_lights} lights and {self.n_buttons} buttons"
         )
-        result = self.find_fewest_presses_p2_aux()
+        result = self.find_fewest_presses_p2_linalg()
         end_time = time.time()
         print(f"-> Time: {end_time - start_time:.4f} seconds")
         return result
 
-    def find_fewest_presses_p2_aux(self) -> int:
+    def find_fewest_presses_p2_linalg(self) -> int:
+        """Use linear algebra to find solution
+
+        self.buttons is a list of int-tuples, where each int specifies which
+            counter to increase
+
+        self.joltage_target is the target count for each counter.
+
+        I want to find the smallest number of presses of buttons to reach the
+        specified joltage_target.
+
+        This means we want to solve
+
+            A x = b
+
+        where the columns of A represent individual buttons and b represent the
+        joltage_target. However, there are often more equations than unknowns,
+        so the constraint here is to find the x that minimizes sum(x).
+        """
+
+        def tuple_to_vector(button: tuple[int, ...]):
+            vector = np.zeros(self.n_lights, dtype=int)
+            vector[list(button)] = 1
+            return vector
+
+        A = np.column_stack(list(map(tuple_to_vector, self.buttons)))
+        objective = np.ones(self.n_buttons, dtype=int)
+        b = np.asarray(self.joltage_target)
+        result = optimize.linprog(
+            objective, A_eq=A, b_eq=b, method="highs", integrality=1
+        )
+        if result.success and result.x:
+            return int(sum(result.x))
+
+        return -1
+
+    def find_fewest_presses_p2_brute_force(self) -> int:
         def check_button_sequence(button_sequence: Counter[tuple[int, ...]]):
             counter = [0] * self.n_lights
             for b, count in button_sequence.items():
