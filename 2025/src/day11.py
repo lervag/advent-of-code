@@ -1,49 +1,25 @@
-from dataclasses import dataclass
 from functools import lru_cache
-import queue
 
 
-@dataclass
-class Device:
-    id: str
-    outputs: list[str]
-
-    @classmethod
-    def from_line(cls, line: str):
-        id, outputs_str = line.split(": ", 1)
-
-        return cls(id, outputs_str.split())
-
-def find_paths_p1(dmap: dict[str, list[str]]) -> int:
-    visited = set[str]("you")
-    q = queue.Queue[str]()
-    [q.put(d) for d in dmap["you"]]
-
-    n = 0
-    counter = 0
-    while not q.empty() and n < 100:
-        current = q.get()
-        if current == "out":
-            counter += 1
-        else:
-            visited |= {current}
-            [q.put(d) for d in dmap[current] if d not in visited]
-
-    return counter
-
-def find_paths_p2(dmap: dict[str, list[str]]) -> int:
+def find_paths(dmap: dict[str, list[str]], p2: bool = False) -> int:
     @lru_cache(maxsize=None)
-    def dfs(path: frozenset[str], device: str) -> int:
+    def dfs(device: str, has_dac: bool = False, has_fft: bool = False) -> int:
         if device == "out":
-            return 1 if "dac" in path and "fft" in path else 0
+            return 1 if has_dac and has_fft else 0
 
         count = 0
         for output in dmap[device]:
-            if output not in path:
-                count += dfs(path | {output}, output)
+            new_has_dac = has_dac or output == "dac"
+            new_has_fft = has_fft or output == "fft"
+            count += dfs(output, new_has_dac, new_has_fft)
+
         return count
 
-    return dfs(frozenset[str](), "svr")
+    if p2:
+        return dfs("svr")
+
+    return dfs("you", True, True)
+
 
 def parse_input(input: str) -> dict[str, list[str]]:
     device_map: dict[str, list[str]] = {}
@@ -52,6 +28,7 @@ def parse_input(input: str) -> dict[str, list[str]]:
         device_map[id] = outputs_str.split()
 
     return device_map
+
 
 example = """
 aaa: you hhh
@@ -86,5 +63,5 @@ with open("inputs/day11.txt", encoding="utf-8") as file:
     actual = file.read()
 
 device_map = parse_input(actual)
-print(f"Part 1: {find_paths_p1(device_map)}")
-print(f"Part 2: {find_paths_p2(device_map)}")
+print(f"Part 1: {find_paths(device_map)}")
+print(f"Part 2: {find_paths(device_map, p2=True)}")
