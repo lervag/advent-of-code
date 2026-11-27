@@ -1,0 +1,64 @@
+[tools]
+rust = { version = "1.100.0", components = "clippy,rustfmt,rust-analyzer" }
+hyperfine = "2.0.0"
+
+[env]
+AOC_YEAR = "2026"
+
+[tasks.new]
+description = "Scaffold src/days/dayNN.rs from the template (default: today)"
+usage = 'arg "[day]" help="Day of the puzzle (default: today)"'
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+day=$((10#${usage_day:-$(date +%d)}))
+file=$(printf "src/days/day%02d.rs" "$day")
+if [ -f "$file" ]; then
+  echo "Already exists: $file"
+else
+  cp templates/day.rs "$file"
+  echo "Created $file"
+fi
+'''
+
+[tasks.run]
+description = "Run both parts of a day with timing (default: today)"
+usage = 'arg "[day]" help="Day of the puzzle (default: today)"'
+run = 'cargo run --release --quiet -- run ${usage_day:-}'
+
+[tasks.runall]
+description = "Run all implemented days with timing"
+run = "cargo run --release --quiet -- runall"
+
+[tasks.test]
+description = "Run tests, optionally only for one day"
+usage = 'arg "[day]" help="Only run tests for this day"'
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+if [ -n "${usage_day:-}" ]; then
+  cargo test --release "$(printf "days::day%02d::" "$((10#$usage_day))")"
+else
+  cargo test --release
+fi
+'''
+
+[tasks.bench]
+description = "Benchmark all implemented days with hyperfine (LTO build)"
+run = '''
+cargo build --profile bench-release --quiet
+hyperfine -N --warmup 20 "target/bench-release/aoc runall"
+'''
+
+[tasks.fmt]
+description = "Format the code"
+run = "cargo fmt"
+
+[tasks.lint]
+description = "Run clippy"
+run = "cargo clippy --all-targets -- -D warnings"
+
+[tasks.check]
+description = "Check formatting, run clippy and tests"
+depends = ["lint", "test"]
+run = "cargo fmt --check"
