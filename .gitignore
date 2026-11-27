@@ -1,7 +1,10 @@
-target
+# sbt / Scala
+target/
+.bsp/
+.bloop/
+.metals/
 metals.sbt
-.bsp
-.metals
-.idea
-
 *.sc
+
+# Editors
+.idea/

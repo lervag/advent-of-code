@@ -1,4 +1,0 @@
-sbt      1.10.2
-coursier latest
-java     temurin-23.0.0+37
-scala    latest
