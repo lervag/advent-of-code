@@ -1,5 +1,5 @@
 [tools]
-"pipx:elf" = "latest"
+"pipx:elf" = "1.2.0"
 
 [env]
 AOC_USER_AGENT = "karl.yngve@lervag.net"
