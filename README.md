@@ -1,20 +1,19 @@
 # Advent of Code
 
-My [Advent of Code](https://adventofcode.com/) solutions. Each year is a
-self-contained project with its own toolchain, managed with
-[`mise`](https://mise.jdx.dev/).
-
-| Year | Language |
-| ---- | -------- |
-| [2022](2022/) | Scala 3 (sbt) |
-| [2023](2023/) | Scala 3 (sbt) |
-| [2024](2024/) | Scala 3 (sbt) |
-
-## Scala years (2022–2024)
+My [Advent of Code](https://adventofcode.com/) solutions.
+Each year is a self-contained project.
+I use [`mise`](https://mise.jdx.dev/) to fetch the relevant tools.
 
 ```sh
-cd 2024
-sbt "run 14"   # run day 14; without an argument it runs the last solved day
+cd 2025
+mise run input [day]     # fetch input to inputs/dayNN.txt (default: today)
+mise run leaderboard     # show private leaderboards for the year
+elf answer $AOC_YEAR DAY PART ANSWER
+elf status $AOC_YEAR
 ```
 
-Puzzle inputs are read from `inputs/` relative to the year's directory.
+## Starting a new year
+
+Create `YYYY/` with its project files and a `mise.toml` that sets
+`AOC_YEAR = "YYYY"` and the tools it needs.
+

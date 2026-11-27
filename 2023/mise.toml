@@ -3,3 +3,6 @@ java = "temurin-23.0.0+37"
 sbt = "1.10.2"
 scala = "latest"
 coursier = "latest"
+
+[env]
+AOC_YEAR = "2023"

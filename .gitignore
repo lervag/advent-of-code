@@ -8,3 +8,10 @@ metals.sbt
 
 # Editors
 .idea/
+
+# Advent of Code session cookie
+.session
+
+# Python
+.venv/
+__pycache__/

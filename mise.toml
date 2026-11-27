@@ -1,0 +1,34 @@
+[tools]
+"pipx:elf" = "latest"
+
+[env]
+AOC_USER_AGENT = "karl.yngve@lervag.net"
+# .session should contain: AOC_SESSION=<session cookie>
+_.file = { path = ".session", redact = true }
+
+[tasks.input]
+description = "Fetch puzzle input into ./inputs/dayNN.txt (default: today)"
+dir = "{{cwd}}"
+usage = 'arg "[day]" help="Day of the puzzle (default: today)"'
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+: "${AOC_YEAR:?Run this from inside a year directory}"
+day=$((10#${usage_day:-$(date +%d)}))
+file=$(printf "inputs/day%02d.txt" "$day")
+if [ -f "$file" ]; then
+  echo "Input file already exists: $file"
+  exit 0
+fi
+mkdir -p inputs
+elf input "$AOC_YEAR" "$day" > "$file.tmp" || { rm -f "$file.tmp"; exit 1; }
+mv "$file.tmp" "$file"
+echo "Wrote $file"
+'''
+
+[tasks.leaderboard]
+description = "Show the private leaderboards for the current year"
+run = '''
+elf leaderboard "${AOC_YEAR:-$(date +%Y)}" 2319949
+elf leaderboard "${AOC_YEAR:-$(date +%Y)}" 203774
+'''
